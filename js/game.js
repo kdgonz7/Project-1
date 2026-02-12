@@ -1,150 +1,152 @@
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", () => {
+    // ——— DOM Elements ———
     const gameSpace = document.getElementById("gamespace");
-    const boundingRect = gameSpace.getBoundingClientRect();
-    const widthOfBalloon = 30;
-    // adding and subbing by width so that the div doesn't go over the edge
-    const minX = boundingRect.left + widthOfBalloon;
-    const maxX = boundingRect.right - widthOfBalloon;
-    const minY = boundingRect.top + widthOfBalloon;
-    const maxY = boundingRect.bottom - widthOfBalloon;
+    const timeDisplay = document.getElementById("time");
+    const scoreDisplay = document.getElementById("score");
+    const startButton = document.getElementById("start_button");
 
+    // ——— Constants & Configuration ———
+    const BALLOON_SIZE = 30;
+    const GOOD_BALLOON_SRC = "img/dot.png";
+    const BAD_BALLOON_SRC = "img/bdot.png";
+    const GOOD_CLICK_SOUND = "audio/meow-1.mp3";
+    const BACKGROUND_MUSIC = "audio/lofi.mp3";
+    const GAME_SPEED_MS = 150;
+    const TIME_DECREMENT_MS = 1000;
 
-    let time = 10;
-    let score = 0;
-    let namePerson = prompt("What is your name?");
+    // ——— Game State ———
+    let namePerson;
+    let timeLeft;
+    let score;
+    let gameIntervals = [];
 
-    let music = new Audio('audio/lofi.mp3');
-    music.loop = true;
+    // ——— Utility Functions ———
+    const getGameBounds = () => {
+        const rect = gameSpace.getBoundingClientRect();
+        const margin = BALLOON_SIZE;
+        return {
+            minX: rect.left + margin,
+            maxX: rect.right - margin,
+            minY: rect.top + margin,
+            maxY: rect.bottom - margin,
+        };
+    };
 
+    const getRandomPosition = () => {
+        const bounds = getGameBounds();
+        const x = Math.random() * (bounds.maxX - bounds.minX) + bounds.minX;
+        const y = Math.random() * (bounds.maxY - bounds.minY) + bounds.minY;
+        return { x, y };
+    };
 
-    setTimeout(() => {
-        music.play().then(r => {
+    const createBalloon = (type) => {
+        const img = document.createElement("img");
+        img.style.position = "absolute";
+        img.style.width = `${BALLOON_SIZE}px`;
+        img.src = type === "good" ? GOOD_BALLOON_SRC : BAD_BALLOON_SRC;
+        img.className = type === "good" ? "dot" : "bdot";
 
+        // Position
+        const { x, y } = getRandomPosition();
+        img.style.left = `${x}px`;
+        img.style.top = `${y}px`;
+
+        // Click handler
+        img.addEventListener("click", () => {
+            img.remove();
+            if (type === "good") {
+                score++;
+                scoreDisplay.textContent = `${score} pts`;
+                playSound(GOOD_CLICK_SOUND);
+            } else {
+                endGame("lose");
+            }
         });
-    }, 1000);
 
+        gameSpace.appendChild(img);
+        return img;
+    };
 
-    document.getElementById("time").innerHTML = `Time: ${time}s`;
-    const addRandomGoodBalloon = () => {
-        if (gameSpace.getElementsByClassName("dot").length > 0) {
-            return;
+    const playSound = (src) => {
+        try {
+            const audio = new Audio(src);
+            audio.play().catch(() => {}); // Ignore autoplay errors (e.g., missing permission)
+        } catch (e) {
+            console.warn("Failed to play sound:", src);
+        }
+    };
+
+    const updateTimer = () => {
+        timeLeft--;
+        timeDisplay.textContent = `Time: ${timeLeft}s`;
+        if (timeLeft <= 0) {
+            endGame("win");
+        }
+    };
+
+    const endGame = (result) => {
+        // Stop all intervals
+        gameIntervals.forEach(intervalId => clearInterval(intervalId));
+        gameIntervals = [];
+
+        const finalMessage = result === "win"
+            ? `Congratulations, ${namePerson}! You scored ${score} points!`
+            : `Game over, ${namePerson}. You scored ${score} points.`;
+
+        setTimeout(() => {
+            alert(finalMessage);
+            location.reload();
+        }, 50); // Slight delay for UX
+    };
+
+    const startGame = () => {
+        // Initialize state
+        namePerson = prompt("What is your name?")?.trim() || "Player";
+        timeLeft = 10;
+        score = 0;
+
+        // Update UI
+        timeDisplay.textContent = `Time: ${timeLeft}s`;
+        scoreDisplay.textContent = `${score} pts`;
+
+        // Start background music (with fallback for autoplay policy)
+        try {
+            const music = new Audio(BACKGROUND_MUSIC);
+            music.loop = true;
+            music.volume = 0.3; // Keep it subtle
+            setTimeout(() => music.play().catch(() => {}), 1000);
+        } catch (e) {
+            console.warn("Audio not supported or blocked.");
         }
 
-        if (time <= 0) {
-            alert("Game Over!");
-            return;
-        }
+        // Clear existing balloons (safety)
+        gameSpace.innerHTML = "";
 
-        const dot = document.createElement("img");
-
-        dot.style.position = "absolute";
-        dot.style.width = `${widthOfBalloon}px`;
-        dot.src = "img/dot.png";
-        dot.className = "dot";
-        dot.onclick = function() {
-            gameSpace.removeChild(dot);
-            score += 1;
-
-            const scoreElement = document.getElementById("score");
-            scoreElement.textContent = `${score} pts`;
-
-            // 1. Create a new Audio object, passing the URL of the audio file.
-            let audio = new Audio('audio/meow-1.mp3');
-            audio.play();
-        }
-
-        const x = Math.random() * (maxX - minX) + minX;
-        const y = Math.random() * (maxY - minY) + minY;
-
-        dot.style.left = `${x}px`;
-        dot.style.top = `${y}px`;
-
-        gameSpace.appendChild(dot);
-    }
-    const addRandomBadBalloon = () => {
-        if (gameSpace.getElementsByClassName("bdot").length > 0) {
-            return;
-        }
-
-        if (time <= 0) {
-            alert("Game Over!");
-            return;
-        }
-
-        const dot = document.createElement("img");
-
-        dot.style.position = "absolute";
-        dot.style.width = `${widthOfBalloon}px`;
-        dot.src = "img/bdot.png";
-        dot.className = "bdot";
-        dot.onclick = function() {
-            gameSpace.removeChild(dot);
-            time = 0;
-            loseGame();
-        }
-
-        const x = Math.random() * (maxX - minX) + minX;
-        const y = Math.random() * (maxY - minY) + minY;
-
-        dot.style.left = `${x}px`;
-        dot.style.top = `${y}px`;
-
-        gameSpace.appendChild(dot);
-    }
-
-    function winGame() {
-        alert(`Game Over, ${namePerson}, you scored ${score} amount of points!`);
-        location.reload();
-    }
-
-    function loseGame() {
-        alert(`Game Over, ${namePerson}, you scored ${score} amount of points!`);
-        location.reload();
-    }
-
-
-    function startGame() {
-        let intervalOfBalloons = setInterval(function() {
-            if (time <= 0) {
-                clearInterval(intervalOfTime);
-                clearInterval(intervalOfBalloons);
-
-                winGame();
-                return;
+        // ——— Game Loops ———
+        // Good balloon: spawn one at a time, only if none exist
+        const goodIntervalId = setInterval(() => {
+            if (timeLeft <= 0) return;
+            const existingGood = gameSpace.querySelector(".dot");
+            if (!existingGood) {
+                createBalloon("good");
             }
-            addRandomGoodBalloon();
-        }, 150);
+        }, GAME_SPEED_MS);
 
-        let intervalOfBadBalloons = setInterval(function() {
-            if (time <= 0) {
-                clearInterval(intervalOfTime);
-                clearInterval(intervalOfBadBalloons);
-                clearInterval(intervalOfBalloons);
-
-                winGame();
-                return;
+        // Bad balloon: same logic
+        const badIntervalId = setInterval(() => {
+            if (timeLeft <= 0) return;
+            const existingBad = gameSpace.querySelector(".bdot");
+            if (!existingBad) {
+                createBalloon("bad");
             }
-            addRandomBadBalloon();
-        }, 150);
+        }, GAME_SPEED_MS);
 
-        let intervalOfTime = setInterval(function() {
-            if (time <= 0) {
-                clearInterval(intervalOfTime);
-                clearInterval(intervalOfBalloons);
-                clearInterval(intervalOfBadBalloons);
+        // Timer
+        const timerId = setInterval(updateTimer, TIME_DECREMENT_MS);
 
-                winGame();
-                return;
-            }
-            time -= 1;
+        gameIntervals = [goodIntervalId, badIntervalId, timerId];
+    };
 
-            const timeElement = document.getElementById("time");
-            timeElement.textContent = `Time: ${time}s`;
-        }, 1000);
-    }
-
-    document.getElementById("start_button").addEventListener("click", function() {
-        startGame();
-    })
-
+    // ——— Event Listener ———
+    startButton?.addEventListener("click", startGame);
 });
