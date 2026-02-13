@@ -5,7 +5,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const scoreDisplay = document.getElementById("score");
     const startButton = document.getElementById("start_button");
 
-    // ——— Constants & Configuration ———
     const BALLOON_SIZE = 30;
     const GOOD_BALLOON_SRC = "img/dot.png";
     const BAD_BALLOON_SRC = "img/bdot.png";
@@ -46,12 +45,10 @@ document.addEventListener("DOMContentLoaded", () => {
         img.src = type === "good" ? GOOD_BALLOON_SRC : BAD_BALLOON_SRC;
         img.className = type === "good" ? "dot" : "bdot";
 
-        // Position
         const { x, y } = getRandomPosition();
         img.style.left = `${x}px`;
         img.style.top = `${y}px`;
 
-        // Click handler
         img.addEventListener("click", () => {
             img.remove();
             if (type === "good") {
@@ -96,20 +93,28 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => {
             alert(finalMessage);
             location.reload();
-        }, 50); // Slight delay for UX
+        }, 50);
     };
 
     const startGame = () => {
+        if (timeLeft > 0) {
+            alert("Game is already in progress. Please finish it before starting a new one.");
+            return;
+        }
+
+        if (timeLeft <= 0) {
+            alert("Game is stale. Restarting!")
+            location.reload();
+            return;
+        }
         // Initialize state
         namePerson = prompt("What is your name?")?.trim() || "Player";
         timeLeft = 10;
         score = 0;
 
-        // Update UI
         timeDisplay.textContent = `Time: ${timeLeft}s`;
         scoreDisplay.textContent = `${score} pts`;
 
-        // Start background music (with fallback for autoplay policy)
         try {
             const music = new Audio(BACKGROUND_MUSIC);
             music.loop = true;
