@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const timeDisplay = document.getElementById("time");
     const scoreDisplay = document.getElementById("score");
     const startButton = document.getElementById("start_button");
+    const nameWelcome = document.getElementById("name_welcome");
 
     const BALLOON_SIZE = 30;
     const GOOD_BALLOON_SRC = "img/dot.png";
@@ -35,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const bounds = getGameBounds();
         const x = Math.random() * (bounds.maxX - bounds.minX) + bounds.minX;
         const y = Math.random() * (bounds.maxY - bounds.minY) + bounds.minY;
-        return { x, y };
+        return {x, y};
     };
 
     const createBalloon = (type) => {
@@ -45,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
         img.src = type === "good" ? GOOD_BALLOON_SRC : BAD_BALLOON_SRC;
         img.className = type === "good" ? "dot" : "bdot";
 
-        const { x, y } = getRandomPosition();
+        const {x, y} = getRandomPosition();
         img.style.left = `${x}px`;
         img.style.top = `${y}px`;
 
@@ -67,7 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const playSound = (src) => {
         try {
             const audio = new Audio(src);
-            audio.play().catch(() => {}); // Ignore autoplay errors (e.g., missing permission)
+            audio.play().catch(() => {
+            }); // Ignore autoplay errors (e.g., missing permission)
         } catch (e) {
             console.warn("Failed to play sound:", src);
         }
@@ -108,7 +110,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         // Initialize state
-        namePerson = prompt("What is your name?")?.trim() || "Player";
         timeLeft = 10;
         score = 0;
 
@@ -119,7 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const music = new Audio(BACKGROUND_MUSIC);
             music.loop = true;
             music.volume = 0.3; // Keep it subtle
-            setTimeout(() => music.play().catch(() => {}), 1000);
+            setTimeout(() => music.play().catch(() => {
+            }), 1000);
         } catch (e) {
             console.warn("Audio not supported or blocked.");
         }
@@ -151,6 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         gameIntervals = [goodIntervalId, badIntervalId, timerId];
     };
+
+    namePerson = prompt("What is your name?")?.trim() || "Player";
+    nameWelcome.textContent = `Welcome, ${namePerson}!`;
 
     // ——— Event Listener ———
     startButton?.addEventListener("click", startGame);
