@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const BACKGROUND_MUSIC = "audio/lofi.mp3";
     const GAME_SPEED_MS = 150;
     const DOG_SPEED_MS = GAME_SPEED_MS +300;
+    const SPECIAL_CAT_SPEED_MS = GAME_SPEED_MS + 600;
     const TIME_DECREMENT_MS = 1000;
 
     // ——— Game State ———
@@ -150,6 +151,17 @@ document.addEventListener("DOMContentLoaded", () => {
             createBalloon("bad");
 
         }, DOG_SPEED_MS);
+
+        // Bad balloon: same logic
+        const specialIntervalId = setInterval(() => {
+            if (timeLeft <= 0) return;
+            const existingBad = gameSpace.querySelector(".bdot");
+            if (existingBad) {
+                existingBad.remove()
+            }
+            createBalloon("bad");
+
+        }, SPECIAL_CAT_SPEED_MS);
 
         // Timer
         const timerId = setInterval(updateTimer, TIME_DECREMENT_MS);
