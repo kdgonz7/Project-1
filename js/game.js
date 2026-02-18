@@ -4,8 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const timeDisplay = document.getElementById("time");
     const scoreDisplay = document.getElementById("score");
     const startButton = document.getElementById("start_button");
+    const nameWelcome = document.getElementById("name_welcome");
 
-    // ——— Constants & Configuration ———
     const BALLOON_SIZE = 30;
     const GOOD_BALLOON_SRC = "img/dot.png";
     const BAD_BALLOON_SRC = "img/bdot.png";
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const bounds = getGameBounds();
         const x = Math.random() * (bounds.maxX - bounds.minX) + bounds.minX;
         const y = Math.random() * (bounds.maxY - bounds.minY) + bounds.minY;
-        return { x, y };
+        return {x, y};
     };
 
     const createBalloon = (type) => {
@@ -47,12 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
         img.src = type === "good" ? GOOD_BALLOON_SRC : BAD_BALLOON_SRC;
         img.className = type === "good" ? "dot" : "bdot";
 
-        // Position
-        const { x, y } = getRandomPosition();
+        const {x, y} = getRandomPosition();
         img.style.left = `${x}px`;
         img.style.top = `${y}px`;
 
-        // Click handler
         img.addEventListener("click", () => {
             img.remove();
             if (type === "good") {
@@ -71,7 +69,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const playSound = (src) => {
         try {
             const audio = new Audio(src);
-            audio.play().catch(() => {}); // Ignore autoplay errors (e.g., missing permission)
+            audio.play().catch(() => {
+            }); // Ignore autoplay errors (e.g., missing permission)
         } catch (e) {
             console.warn("Failed to play sound:", src);
         }
@@ -97,25 +96,33 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => {
             alert(finalMessage);
             location.reload();
-        }, 50); // Slight delay for UX
+        }, 50);
     };
 
     const startGame = () => {
+        if (timeLeft > 0) {
+            alert("Game is already in progress. Please finish it before starting a new one.");
+            return;
+        }
+
+        if (timeLeft <= 0) {
+            alert("Game is stale. Restarting!")
+            location.reload();
+            return;
+        }
         // Initialize state
-        namePerson = prompt("What is your name?")?.trim() || "Player";
         timeLeft = 10;
         score = 0;
 
-        // Update UI
         timeDisplay.textContent = `Time: ${timeLeft}s`;
         scoreDisplay.textContent = `${score} pts`;
 
-        // Start background music (with fallback for autoplay policy)
         try {
             const music = new Audio(BACKGROUND_MUSIC);
             music.loop = true;
             music.volume = 0.3; // Keep it subtle
-            setTimeout(() => music.play().catch(() => {}), 1000);
+            setTimeout(() => music.play().catch(() => {
+            }), 1000);
         } catch (e) {
             console.warn("Audio not supported or blocked.");
         }
@@ -149,6 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         gameIntervals = [goodIntervalId, badIntervalId, timerId];
     };
+
+    namePerson = prompt("What is your name?")?.trim() || "Player";
+    nameWelcome.textContent = `Welcome, ${namePerson}!`;
 
     // ——— Event Listener ———
     startButton?.addEventListener("click", startGame);
