@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const GOOD_CLICK_SOUND = "audio/meow-1.mp3";
     const BACKGROUND_MUSIC = "audio/lofi.mp3";
     const GAME_SPEED_MS = 150;
+    const DOG_SPEED_MS = GAME_SPEED_MS +300;
     const TIME_DECREMENT_MS = 1000;
 
     // ——— Game State ———
@@ -136,10 +137,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const badIntervalId = setInterval(() => {
             if (timeLeft <= 0) return;
             const existingBad = gameSpace.querySelector(".bdot");
-            if (!existingBad) {
-                createBalloon("bad");
+            if (existingBad) {
+                existingBad.remove()
             }
-        }, GAME_SPEED_MS);
+            createBalloon("bad");
+
+        }, DOG_SPEED_MS);
 
         // Timer
         const timerId = setInterval(updateTimer, TIME_DECREMENT_MS);
