@@ -246,7 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
             this.saveGame();
             this.onEndGame(); // call the onEndGame callback to handle any screen changes, etc.
             this.time = DEFAULT_GAME_TIME;
-
+            this.ents = [];
         }
 
         /**
@@ -485,7 +485,7 @@ document.addEventListener("DOMContentLoaded", () => {
             this.leaderElement.style.display = "block";
 
             let leaderboardTable = document.getElementById("leaderboardt");
-
+            leaderboardTable.replaceChildren(...[]); // clear the leaderboard table before populating it.
             for (const ent of em.ents) {
                 if (ent.disableFromStats) {
                     continue;
