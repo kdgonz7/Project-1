@@ -225,6 +225,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 return; // Don't actually spawn anything if we're just simulating for disableFromStats.
             }
 
+            this.bgMusic.pause();
+
             alert("You " + (result === "win" ? "win!" : "lose!") + ` Your score: ${this.gameScore}`);
             let entsString = "";
 
