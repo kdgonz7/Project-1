@@ -3,6 +3,8 @@
 html, body {
     font-family: 'Playwrite NZ Basic', sans-serif;
     font-size: 13px;
+    margin: 0;
+    padding: 0;
 }
 
 body {
@@ -25,8 +27,6 @@ button {
 }
 
 #content {
-    padding: 20px;
-    height: 25vh;
 }
 
 
@@ -83,18 +83,64 @@ button:active {
 
 #grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
     grid-template-rows: repeat(1, 1fr);
     gap: 25px;
-    width: 100%;
+    width: 80%;
     height: 100%;
+    margin: auto;
 }
 
-@media screen and (max-width: 600px) {
-    #grid {
-        grid-template-columns: repeat(1, 1fr);
-        grid-template-rows: repeat(2, 1fr);
-    }
+#info {
+    background-color: #1d2d7c;
+    border-radius: 10px;
+    color: bisque;
+    font-size: 16px;
+    font-weight: bold;
+    width: 10%;
+    box-shadow: 0 0 10px rgba(92, 92, 92, 0.5);
+    height: 100%;
+    padding: 10px;
+}
+
+#gamespaceTotality {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    flex-direction: row;
+    gap: 20px;
+}
+
+#leaderstats {
+    background-color: #1d2d7c;
+    border-radius: 10px;
+    color: bisque;
+    font-size: 16px;
+    font-weight: bold;
+    width: 100%;
+    box-shadow: 0 0 10px rgba(92, 92, 92, 0.5);
+    height: 100%;
+    padding: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #3745a1;
+    border-radius: 10px;
+}
+
+table th, table td {
+    border: 1px solid bisque;
+    padding: 8px;
+    text-align: left;
+    color: bisque;
+}
+
+#back_to_menu {
+    margin-top: 15px;
+    padding: 10px;
 }
 
 @media only screen and (max-width: 900px) {

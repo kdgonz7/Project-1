@@ -2,18 +2,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // ——— DOM Elements ———
     const timeDisplay = document.getElementById("time");
     const startButton = document.getElementById("start_button");
-    const nameWelcome = document.getElementById("name_welcome");
-
-    // New Variables
-    const DEFAULT_GAME_TIME = 15; // seconds
+    document.getElementById("name_welcome");
+// New Variables
+    const DEFAULT_GAME_TIME = 10; // seconds
     const TIME_DECREMENT_MS = 1000;
     const ELEMENT_SIZE = 30;
     const BACKGROUND_MUSIC = "audio/lofi.mp3";
 
     // ——— Game State ———
-    let namePerson;
-
-    // ——— Utility Functions ———
+// ——— Utility Functions ———
     const playSound = (src) => {
         try {
             const audio = new Audio(src);
@@ -245,7 +242,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             this.cleanupIntervals(); // cleanup any intervals created.
             this.saveGame();
-            location.reload();
+            this.onEndGame(); // call the onEndGame callback to handle any screen changes, etc.
+            this.time = DEFAULT_GAME_TIME;
+
         }
 
         /**
@@ -301,11 +300,15 @@ document.addEventListener("DOMContentLoaded", () => {
          */
         decrementTimer() {
             this.time--;
-            timeDisplay.textContent = `Time: ${this.time}s`;
+            this.updateTimeText();
 
             if (this.time <= 0) {
                 this.endGame("win");
             }
+        }
+
+        updateTimeText() {
+            timeDisplay.textContent = `Time: ${this.time}s`;
         }
 
         /**
@@ -442,7 +445,71 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    const SMState = {
+        MENU: "menu",
+        GAME: "game",
+        LS: "leaderstats"
+    }
+
+    class ScreenManager {
+        constructor() {
+            this.menuElement = document.getElementById("leftside");
+            this.gameSpaceElement = document.getElementById("gamespace");
+            this.scoreElement = document.getElementById("info");
+            this.leaderElement = document.getElementById("leaderstats");
+            this.state = SMState.MENU;
+        }
+
+        setMenu() {
+            this.menuElement.style.display = "block";
+            this.gameSpaceElement.style.display = "none";
+            this.scoreElement.style.display = "none";
+            this.leaderElement.style.display = "none";
+            this.state = SMState.GAME;
+        }
+
+        setGame() {
+            this.menuElement.style.display = "none";
+            this.scoreElement.style.display = "block";
+            this.gameSpaceElement.style.display = "block";
+            this.state = SMState.MENU;
+        }
+
+        setLeaderstats(em) {
+            // document.getElementById("gamespaceTotality").display.style = "none";
+            this.menuElement.style.display = "none";
+            this.scoreElement.style.display = "none";
+            this.gameSpaceElement.style.display = "none";
+            this.leaderElement.style.display = "block";
+
+            let leaderboardTable = document.getElementById("leaderboardt");
+
+            for (const ent of em.ents) {
+                if (ent.disableFromStats) {
+                    continue;
+                }
+
+                let row = leaderboardTable.insertRow();
+                let cell1 = row.insertCell(0);
+                let cell2 = row.insertCell(1);
+                cell1.innerHTML = toTitleCase(ent.cssClass);
+                cell2.innerHTML = ent.score;
+            }
+
+            this.state = SMState.LS;
+        }
+
+        fixScreens() {
+            this.gameSpaceElement.style.display = "none";
+            this.scoreElement.style.display = "none";
+            this.leaderElement.style.display = "none";
+        }
+    }
+
     // ——— Define Entities ———
+
+    const sm = new ScreenManager();
+    sm.fixScreens();
 
     /**
      * A cute cat that gives you +1 point.
@@ -483,7 +550,6 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         size: ELEMENT_SIZE,
     });
-
     const fish = new Entity({
             image: "img/fish.png",
             cssClass: "fish",
@@ -506,7 +572,6 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             size: ELEMENT_SIZE
     });
-
     const time = new Entity({
         image: "img/extra-time.png",
         cssClass: "clock",
@@ -521,7 +586,6 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         size: ELEMENT_SIZE,
     })
-
     const specialCat = new Entity({
         image: "img/golden-cat.png",
         cssClass: "special-cat",
@@ -554,42 +618,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         size: ELEMENT_SIZE,
     });
-
-    const areaShot = new Entity({
-        image: "img/golden-cat.png",
-        cssClass: "enemycat",
-        sound: "audio/meow-1.mp3",
-        spawnTime: 2000,
-        spawnType: SpawnType.CONTINUOUS,
-        onEntityClick: function (_) {
-            this.score += 1;
-
-        },
-        removeOverride: function(img, em) {
-            // iterate all nearby cat entities and remove them, point per cat.
-            for (const ent of document.querySelectorAll(".cat")) {
-                const rect = ent.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-
-                const areaRect = {
-                    left: parseInt(img.style.left) - 50,
-                    right: parseInt(img.style.left) + 50,
-                    top: parseInt(img.style.top) - 50,
-                    bottom: parseInt(img.style.top) + 50,
-                };
-
-                if (centerX >= areaRect.left && centerX <= areaRect.right && centerY >= areaRect.top && centerY <= areaRect.bottom) {
-                    ent.remove();
-                    this.score++;
-                }
-
-                img.remove();
-            }
-        },
-        size: ELEMENT_SIZE + 10,
-    });
-
     const entityManager = new EntityManager();
 
     entityManager.loadGame();
@@ -597,16 +625,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ——— Event Listener ———
     startButton?.addEventListener("click", () => {
+        sm.setGame();
+
         // let's create this game!
         entityManager.addEntity(goodCat);
         entityManager.addEntity(badDog);
         entityManager.addEntity(fish);
         entityManager.addEntity(time);
         entityManager.addEntity(specialCat);
-        entityManager.addEntity(areaShot);
 
         entityManager.setBGMusic(BACKGROUND_MUSIC);
 
         entityManager.startGame();
+        entityManager.onEndGame = function() {
+                sm.setLeaderstats(entityManager);
+        }
+    });
+
+    document.getElementById("back_to_menu")?.addEventListener("click", () => {
+        sm.setMenu();
     });
 });
