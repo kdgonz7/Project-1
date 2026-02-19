@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nameWelcome = document.getElementById("name_welcome");
 
     // New Variables
-    const DEFAULT_GAME_TIME = 10; // seconds
+    const DEFAULT_GAME_TIME = 15; // seconds
     const TIME_DECREMENT_MS = 1000;
     const ELEMENT_SIZE = 30;
     const BACKGROUND_MUSIC = "audio/lofi.mp3";
@@ -83,10 +83,10 @@ document.addEventListener("DOMContentLoaded", () => {
              * this is used to define a custom removal function for the entity, meaning that if you have a BOSS CAT, they can only die after 5 clicks, etc.
              */
             this.removeOverride = data.removeOverride || null;
-
             this.size = data.size;
         }
     }
+
     class EntityManager {
         constructor() {
             this.ents = [];
@@ -96,7 +96,29 @@ document.addEventListener("DOMContentLoaded", () => {
             this.gameScore = 0;
             this.scoreText = document.getElementById("score");
             this.bgMusic = null;
+            this.playerName = null;
+            this.playerCredits = 0;
+        }
 
+        /**
+         * A function to prompt the user for their name. It is a No-Op if the player-name is already set.
+         *
+         * You are meant to run loadGame before prompting for the name.
+         */
+        promptForName() {
+            if (this.getPlayerName()) {
+                return;
+            }
+
+            let pn = prompt("What is your name?")?.trim();
+
+            if (pn) {
+                this.playerName = pn;
+            }
+        }
+
+        getPlayerName() {
+            return this.playerName;
         }
 
         getGameBounds() {
@@ -116,6 +138,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const y = Math.random() * (bounds.maxY - bounds.minY) + bounds.minY;
 
             return {x, y};
+        };
+
+        updateScoreText() {
+            this.scoreText.innerHTML = `${this.gameScore} pts`;
         };
 
         /**
@@ -165,7 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
              * each entities' on click function handles the personal score, etc.
              * the game manager handles the unified timer and sound effects.
              */
-
             if (this.bgMusic) {
                 this.bgMusic.play().catch(() => {
                 })
@@ -174,7 +199,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const timerIntervalId = setInterval(() => this.decrementTimer(), TIME_DECREMENT_MS);
             this.gameIntervals.push(timerIntervalId);
 
-            // Threading
             for (const entity of this.ents) {
                 switch (entity.spawnType) {
                     case SpawnType.STATIC:
@@ -213,12 +237,63 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 entsString += `Entity: ${toTitleCase(ent.cssClass)}, Score: ${ent.score}\n`;
             }
+            this.addPlayerCredits(this.gameScore * 0.56); // the player credit exchange rate is 56% of final score.
+            this.gameSpace.replaceChildren(...[]); // clear the game space for the end game stats display.
 
             alert(`Stats:\nTime Left: ${this.time}s\nScore: ${this.gameScore}`);
             alert(`Entities:\n${entsString}`);
 
             this.cleanupIntervals(); // cleanup any intervals created.
+            this.saveGame();
             location.reload();
+        }
+
+        /**
+         * Saves the game.
+         */
+        saveGame() {
+            if (localStorage.getItem("score") === null || this.gameScore > parseInt(localStorage.getItem("score"))) {
+                localStorage.setItem("score", this.gameScore);
+                alert("You got a new high score of " + this.gameScore + " points, " + (this.playerName || "Player") + "! Your score has been saved.");
+            }
+
+            localStorage.setItem("name", this.playerName);
+            localStorage.setItem("credits", this.playerCredits);
+        }
+
+        /**
+         * Loads the game.
+         */
+        loadGame() {
+            const savedScore = localStorage.getItem("score");
+            const name = localStorage.getItem("name");
+            const credits = localStorage.getItem("credits");
+
+            if (credits) {
+                this.updatePlayerCredits(parseInt(credits));
+            } else {
+                this.updatePlayerCredits(0); // initialize credits to 0 if there is no saved value.
+            }
+
+            if (savedScore) {
+                this.updateHighScoreText(savedScore);
+            }
+
+            if (name) {
+                let yesNoPrompt = prompt(`Are you ${name}? Type "yes" to confirm, or "no" to enter a new name.`)?.trim().toLowerCase();
+
+                if (yesNoPrompt !== "yes" && yesNoPrompt !== "no") {
+                    do {
+                        yesNoPrompt = prompt(`Are you ${name}? Type "yes" to confirm, or "no" to enter a new name.`)?.trim().toLowerCase();
+                    } while (yesNoPrompt !== "yes" && yesNoPrompt !== "no");
+                }
+                if (yesNoPrompt === "yes")
+                    this.playerName = name;
+                else
+                    this.promptForName();
+            } else {
+                this.promptForName();
+            }
         }
 
         /**
@@ -233,8 +308,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        updateScoreText() {
-            this.scoreText.innerHTML = `${this.gameScore} pts`;
+        /**
+         * This function doesn't do a lot right now, but it's meant to be used when the game gets larger
+         */
+        setupGame() {
+            timeDisplay.innerHTML = `Time: ${this.time}s`;
+            this.updateScoreText();
+
+            document.getElementById("name_welcome").innerHTML = `Welcome, ${this.playerName || "Player"}!`;
         }
 
         /**
@@ -250,8 +331,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            if (Math.random() > ent.decisionFactor) {
-                return; // don't spawn the entity if the random number is greater than the decision factor. This allows for spawn chance to be implemented.
+            if (ent.decisionFactor) {
+                if (Math.random() > ent.decisionFactor) {
+                    return; // don't spawn the entity if the random number is greater than the decision factor. This allows for spawn chance to be implemented.
+                }
             }
 
             this.spawnEntity(ent);
@@ -269,8 +352,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 resultOfCSS.remove();
             }
 
-            if (Math.random() > ent.decisionFactor) {
-                return; // don't spawn the entity if the random number is greater than the decision factor. This allows for spawn chance to be implemented.
+            if (ent.decisionFactor) {
+                if (Math.random() > ent.decisionFactor) {
+                    return; // don't spawn the entity if the random number is greater than the decision factor. This allows for spawn chance to be implemented.
+                }
             }
 
             this.spawnEntity(ent);
@@ -288,11 +373,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const img = document.createElement("img");
             const {x, y} = this.getRandomPosition();
+
             img.style.position = "absolute";
+            img.style.width = `${ent.size}px`;
+
             img.style.top = `${y}px`;
             img.style.left = `${x}px`;
 
-            img.style.width = `${ent.size}px`;
             img.src = ent.image;
             img.className = ent.cssClass;
 
@@ -317,6 +404,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     img.remove(); // remove the entity from the game space.
                 }
+
             });
 
             this.gameSpace.appendChild(img);
@@ -339,10 +427,20 @@ document.addEventListener("DOMContentLoaded", () => {
             this.bgMusic = new Audio(backgroundMusic);
             this.bgMusic.loop = true;
         }
-    }
 
-    namePerson = prompt("What is your name?")?.trim() || "Player";
-    nameWelcome.textContent = `Welcome, ${namePerson}!`;
+        updateHighScoreText(savedScore) {
+            document.getElementById("highscore").innerHTML = "HIGH SCORE: " + savedScore + " pts";
+        }
+
+        updatePlayerCredits(number) {
+            this.playerCredits = parseInt(number);
+            document.getElementById("credits").innerHTML = `Credits: ${this.playerCredits} cc`;
+        }
+
+        addPlayerCredits(number) {
+            this.updatePlayerCredits(this.playerCredits + number);
+        }
+    }
 
     // ——— Define Entities ———
 
@@ -376,6 +474,10 @@ document.addEventListener("DOMContentLoaded", () => {
         sound: "audio/bark.mp3",
         spawnTime: 550,
         spawnType: SpawnType.CONTINUOUS,
+        /**
+         *
+         * @param {EntityManager} em
+         */
         onEntityClick: function (em) {
             em.endGame("lose");
         },
@@ -383,26 +485,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const fish = new Entity({
-        image: "img/fish.png",
-        cssClass: "fish",
-        sound: "audio/splash.mp3",
-        spawnTime: 2500,
-        spawnType: SpawnType.CONTINUOUS,
-        decisionFactor: 1/2, // this is used to determine spawn chance.
-        onEntityClick: function (em) {
-            em.gameScore += 5; // give the player 5 points for clicking the fish.
-            this.score += 1;
+            image: "img/fish.png",
+            cssClass: "fish",
+            sound: "audio/splash.mp3",
+            spawnTime: 2500,
+            spawnType: SpawnType.CONTINUOUS,
+            decisionFactor: 1/2, // this is used to determine spawn chance.
+            onEntityClick: function (em) {
+                em.gameScore += 5; // give the player 5 points for clicking the fish.
+                this.score += 1;
 
-            // make the screen shake (if not simulated obviously)
-            if (!em.simulated) {
-                const gameSpace = em.gameSpace;
-                gameSpace.classList.add("shake");
-                setTimeout(() => {
-                    gameSpace.classList.remove("shake");
-                }, 500);
-            }
-        },
-        size: ELEMENT_SIZE
+                // make the screen shake (if not simulated obviously)
+                if (!em.simulated) {
+                    const gameSpace = em.gameSpace;
+                    gameSpace.classList.add("shake");
+                    setTimeout(() => {
+                        gameSpace.classList.remove("shake");
+                    }, 500);
+                }
+            },
+            size: ELEMENT_SIZE
     });
 
     const time = new Entity({
@@ -411,7 +513,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sound: "audio/clock-tick.mp3",
         spawnTime: 4000,
         spawnType: SpawnType.STATIC,
-        decisionFactor: 1/5, // this is used to determine spawn chance.
+        decisionFactor: 1/3, // this is used to determine spawn chance.
         onEntityClick: function (em) {
             if (!em.simulated) {
                 em.time += 5; // add 5 seconds to the timer.
@@ -453,15 +555,55 @@ document.addEventListener("DOMContentLoaded", () => {
         size: ELEMENT_SIZE,
     });
 
+    const areaShot = new Entity({
+        image: "img/golden-cat.png",
+        cssClass: "enemycat",
+        sound: "audio/meow-1.mp3",
+        spawnTime: 2000,
+        spawnType: SpawnType.CONTINUOUS,
+        onEntityClick: function (_) {
+            this.score += 1;
+
+        },
+        removeOverride: function(img, em) {
+            // iterate all nearby cat entities and remove them, point per cat.
+            for (const ent of document.querySelectorAll(".cat")) {
+                const rect = ent.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                const areaRect = {
+                    left: parseInt(img.style.left) - 50,
+                    right: parseInt(img.style.left) + 50,
+                    top: parseInt(img.style.top) - 50,
+                    bottom: parseInt(img.style.top) + 50,
+                };
+
+                if (centerX >= areaRect.left && centerX <= areaRect.right && centerY >= areaRect.top && centerY <= areaRect.bottom) {
+                    ent.remove();
+                    this.score++;
+                }
+
+                img.remove();
+            }
+        },
+        size: ELEMENT_SIZE + 10,
+    });
+
+    const entityManager = new EntityManager();
+
+    entityManager.loadGame();
+    entityManager.setupGame();
+
     // ——— Event Listener ———
     startButton?.addEventListener("click", () => {
-        const entityManager = new EntityManager();
         // let's create this game!
         entityManager.addEntity(goodCat);
         entityManager.addEntity(badDog);
         entityManager.addEntity(fish);
         entityManager.addEntity(time);
         entityManager.addEntity(specialCat);
+        entityManager.addEntity(areaShot);
 
         entityManager.setBGMusic(BACKGROUND_MUSIC);
 

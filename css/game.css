@@ -7,13 +7,17 @@ html, body {
 
 body {
     background: #ffffff url("../img/bg.jpg");
-    background-size: cover;
+    background-size: contain;
 }
 
-
 h1 {
-    padding: 10px;
     text-align: center;
+    margin-bottom: 0;
+    border: none;
+}
+
+hr {
+    margin-top: 3px;
 }
 
 button {
@@ -23,8 +27,6 @@ button {
 #content {
     padding: 20px;
     height: 25vh;
-    display: flex;
-    flex-wrap: wrap;
 }
 
 
