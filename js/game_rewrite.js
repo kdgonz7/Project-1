@@ -174,6 +174,16 @@ document.addEventListener("DOMContentLoaded", () => {
             this.ents.push(entity);
         }
 
+        addEntities(...entities){
+            if (entities.length === 0) {
+                return;
+            }
+
+            for (const entity of entities) {
+                this.addEntity(entity);
+            }
+        }
+
         /**
          * Starts the entire game.
          * Runs through each entity, creates an interval for each one based on its spawn type, and handles the global timer and sound effects.
@@ -396,7 +406,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 ent.onEntityClick(this); // run the entity click function to handle score changes, fx, etc.
-                playSound(ent.sound); // play the entity's sound effect.
+                if (typeof ent.sound === "string") {
+                    playSound(ent.sound); // play the entity's sound effect.
+                }
+                else if (Array.isArray(ent.sound)) {
+                    const random = Math.floor(Math.random() * ent.sound.length);
+                    playSound(ent.sound[random]); // if there are multiple sound effects, pick a random one to play.
+                }
 
                 if (ent.fxFunction) {
                     ent.fxFunction(this); // run any special fx the entity has.
@@ -521,7 +537,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const goodCat = new Entity({
         image: "img/cat.png",
         cssClass: "cat",
-        sound: "audio/meow-1.mp3",
+        sound: [
+            "audio/meow-1.mp3",
+            "audio/meow-2.mp3",
+            "audio/meow-3.mp3",
+        ],
         spawnTime: 150, // checks must be frequent for static entities to ensure they spawn again after being removed.
         spawnType: SpawnType.STATIC,
         onEntityClick: function (em) {
@@ -529,6 +549,26 @@ document.addEventListener("DOMContentLoaded", () => {
             em.gameScore++;
 
             console.log("Test!");
+        },
+
+        removeOverride: function(img, em) {
+              let particleFx = document.createElement("img");
+              particleFx.src = "img/heart.gif";
+              particleFx.style.position = "absolute";
+              particleFx.style.width = "50px";
+              particleFx.className = "particle";
+
+              const {x, y} = img.getBoundingClientRect();
+              particleFx.style.top = `${y}px`;
+              particleFx.style.left = `${x}px`;
+
+              em.gameSpace.appendChild(particleFx);
+
+              setTimeout (() => {
+                  particleFx.remove();
+              }, 500);
+
+              img.remove();
         },
         size: ELEMENT_SIZE,
     });
@@ -574,6 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             size: ELEMENT_SIZE
     });
+
     const time = new Entity({
         image: "img/extra-time.png",
         cssClass: "clock",
@@ -588,6 +629,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         size: ELEMENT_SIZE,
     })
+
     const specialCat = new Entity({
         image: "img/golden-cat.png",
         cssClass: "special-cat",
@@ -620,31 +662,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
         size: ELEMENT_SIZE,
     });
-    const entityManager = new EntityManager();
 
-    entityManager.loadGame();
-    entityManager.setupGame();
+    const main = () => {
+        const entityManager = new EntityManager();
 
-    // ——— Event Listener ———
-    startButton?.addEventListener("click", () => {
-        sm.setGame();
+        entityManager.loadGame();
+        entityManager.setupGame();
 
-        // let's create this game!
-        entityManager.addEntity(goodCat);
-        entityManager.addEntity(badDog);
-        entityManager.addEntity(fish);
-        entityManager.addEntity(time);
-        entityManager.addEntity(specialCat);
+        // ——— Event Listener ———
+        startButton?.addEventListener("click", () => {
+            sm.setGame();
 
-        entityManager.setBGMusic(BACKGROUND_MUSIC);
+            entityManager.addEntities(goodCat, badDog, fish, time, specialCat);
+            entityManager.setBGMusic(BACKGROUND_MUSIC);
 
-        entityManager.startGame();
-        entityManager.onEndGame = function() {
+            entityManager.startGame();
+            entityManager.onEndGame = function () {
                 sm.setLeaderstats(entityManager);
-        }
-    });
+            }
+        });
 
-    document.getElementById("back_to_menu")?.addEventListener("click", () => {
-        sm.setMenu();
-    });
+        document.getElementById("back_to_menu")?.addEventListener("click", () => {
+            sm.setMenu();
+        });
+    }
+
+    main();
 });
