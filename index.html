@@ -8,7 +8,7 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-    <title>Super Kitty Blaster Simulator</title>
+    <title>HACK THE MAINFRAME</title>
     <link href="css/game.css" rel="stylesheet"/>
     <meta charset="utf-8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,29 +16,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Playwrite+NZ+Basic:wght@100..400&display=swap" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://code.jquery.com/ui/1.14.2/jquery-ui.js"></script>
+    <script src="https://unpkg.com/typed.js@3.0.0/dist/typed.umd.js"></script>
+    <link rel='stylesheet' href='//cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css'>
 </head>
 <body>
 
 <div id="wrapper">
+    <div id="splash">
+        <h1>Loading...</h1>
+    </div>
+
     <div id="content">
-        <h1>Super Kitty Simulator</h1>
+        <h1>&gt; Hack the MainFrame...</h1>
         <hr>
 
         <div id="grid">
             <div id="leftside" class="col1">
-                <h3 id="name_welcome">Welcome...</h3>
+                <h3 id="title">Welcome...</h3>
                 <p id="directions">
-                    Your job is simple. Shoot the kitties. Don't shoot the dogs. Get as many points as you can in 10 seconds. Your entire game space is to the right there, that little box.
-                    <br><br>
-                    Each kitten is worth a single point... If you're lucky, you'll see the <b>consistent</b> fish that shows up. Collect him for 5 points!
-                    <br><br>
-                    The dog will end your game! Beware of him.
+
                 </p>
 
                 <button type="button" id="start_button">Start!</button>
             </div>
 
-            <div id="gamespaceTotality">
+            <div id="gamespaceTotality" style="display: none">
                 <div id="info">
                     <p><span id="score">0 pts</span></p>
                     <p><span id="credits">Credits: 0cc</span></p>
@@ -49,7 +51,7 @@
                 <div id="progbar"></div>
             </div>
 
-            <div id="leaderstats">
+            <div id="leaderstats" style="display: none">
                 <table id="leaderboardt">
                     <thead>
                         <tr>

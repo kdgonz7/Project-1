@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
             this.onEntityClick = data.onEntityClick;
 
             /**
-             * this is used to define a custom removal function for the entity, meaning that if you have a BOSS CAT, they can only die after 5 clicks, etc.
+             * this is used to define a custom removal function for the entity, meaning that if you have a BOSS, they can only die after 5 clicks, etc.
              */
             this.removeOverride = data.removeOverride || null;
             this.size = data.size;
@@ -89,12 +89,13 @@ document.addEventListener("DOMContentLoaded", () => {
             this.ents = [];
             this.gameIntervals = []; // this cleans up intervals after the game is over.
             this.time = DEFAULT_GAME_TIME;
-            this.gameSpace = document.getElementById("gamespace");
+            this.gameSpace = $("#gamespace");
             this.gameScore = 0;
-            this.scoreText = document.getElementById("score");
+            this.scoreText = $("#score");
             this.bgMusic = null;
             this.playerName = null;
             this.playerCredits = 0;
+            this.onEndGame = function() {}
         }
 
         /**
@@ -138,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         updateScoreText() {
-            this.scoreText.innerHTML = `${this.gameScore} pts`;
+            this.scoreText.html(`${this.gameScore} pts`);
         };
 
         /**
@@ -254,7 +255,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             this.cleanupIntervals(); // cleanup any intervals created.
             this.saveGame();
-            this.onEndGame(); // call the onEndGame callback to handle any screen changes, etc.
+            if (this.onEndGame) {
+                this.onEndGame(); // call the onEndGame callback to handle any screen changes, etc.
+            }
+
             this.time = DEFAULT_GAME_TIME;
             this.ents = [];
         }
@@ -463,229 +467,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    const SMState = {
-        MENU: "menu",
-        GAME: "game",
-        LS: "leaderstats"
-    }
+    const playAnimations = () => {
+        $("#splash").delay(5000).fadeOut(10000);
 
-    class ScreenManager {
-        constructor() {
-            this.menuElement = document.getElementById("leftside");
-            this.gameSpaceElement = document.getElementById("gamespace");
-            this.scoreElement = document.getElementById("info");
-            this.leaderElement = document.getElementById("leaderstats");
-            this.state = SMState.MENU;
-        }
-
-        setMenu() {
-            this.menuElement.style.display = "block";
-            this.gameSpaceElement.style.display = "none";
-            this.scoreElement.style.display = "none";
-            this.leaderElement.style.display = "none";
-            this.state = SMState.GAME;
-        }
-
-        setGame() {
-            this.menuElement.style.display = "none";
-            this.scoreElement.style.display = "block";
-            this.gameSpaceElement.style.display = "block";
-            this.state = SMState.MENU;
-        }
-
-        setLeaderstats(em) {
-            // document.getElementById("gamespaceTotality").display.style = "none";
-            this.menuElement.style.display = "none";
-            this.scoreElement.style.display = "none";
-            this.gameSpaceElement.style.display = "none";
-            this.leaderElement.style.display = "block";
-
-            let leaderboardTable = document.getElementById("leaderboardt");
-            leaderboardTable.replaceChildren(...[]); // clear the leaderboard table before populating it.
-            for (const ent of em.ents) {
-                if (ent.disableFromStats) {
-                    continue;
-                }
-
-                let row = leaderboardTable.insertRow();
-                let cell1 = row.insertCell(0);
-                let cell2 = row.insertCell(1);
-                cell1.innerHTML = toTitleCase(ent.cssClass);
-                cell2.innerHTML = ent.score;
-            }
-
-            this.state = SMState.LS;
-        }
-
-        fixScreens() {
-            this.gameSpaceElement.style.display = "none";
-            this.scoreElement.style.display = "none";
-            this.leaderElement.style.display = "none";
-        }
-    }
-
-    // ——— Define Entities ———
-
-    const sm = new ScreenManager();
-    sm.fixScreens();
-
-    /**
-     * A cute cat that gives you +1 point.
-     *
-     * @type {Entity}
-     */
-    const goodCat = new Entity({
-        image: "img/cat.png",
-        cssClass: "cat",
-        sound: [
-            "audio/meow-1.mp3",
-            "audio/meow-2.mp3",
-            "audio/meow-3.mp3",
-        ],
-        spawnTime: 150, // checks must be frequent for static entities to ensure they spawn again after being removed.
-        spawnType: SpawnType.STATIC,
-        onEntityClick: function (em) {
-            this.score++;
-            em.gameScore++;
-
-            console.log("Test!");
-        },
-
-        removeOverride: function(img, em) {
-              let particleFx = document.createElement("img");
-              particleFx.src = "img/heart.gif";
-              particleFx.style.position = "absolute";
-              particleFx.style.width = "50px";
-              particleFx.className = "particle";
-
-              const {x, y} = img.getBoundingClientRect();
-              particleFx.style.top = `${y}px`;
-              particleFx.style.left = `${x}px`;
-
-              em.gameSpace.appendChild(particleFx);
-
-              setTimeout (() => {
-                  particleFx.remove();
-              }, 500);
-
-              img.remove();
-        },
-        size: ELEMENT_SIZE,
-    });
-
-    /**
-     * A dog that ends your game right away if you click it.
-     * @type {Entity}
-     */
-    const badDog = new Entity({
-        image: "img/dog.png",
-        cssClass: "dog",
-        sound: "audio/bark.mp3",
-        spawnTime: 550,
-        spawnType: SpawnType.CONTINUOUS,
-        /**
-         *
-         * @param {EntityManager} em
-         */
-        onEntityClick: function (em) {
-            em.endGame("lose");
-        },
-        size: ELEMENT_SIZE,
-    });
-    const fish = new Entity({
-            image: "img/fish.png",
-            cssClass: "fish",
-            sound: "audio/splash.mp3",
-            spawnTime: 2500,
-            spawnType: SpawnType.CONTINUOUS,
-            decisionFactor: 1/2, // this is used to determine spawn chance.
-            onEntityClick: function (em) {
-                em.gameScore += 5; // give the player 5 points for clicking the fish.
-                this.score += 1;
-
-                // make the screen shake (if not simulated obviously)
-                if (!em.simulated) {
-                    const gameSpace = em.gameSpace;
-                    gameSpace.classList.add("shake");
-                    setTimeout(() => {
-                        gameSpace.classList.remove("shake");
-                    }, 500);
-                }
-            },
-            size: ELEMENT_SIZE
-    });
-
-    const time = new Entity({
-        image: "img/extra-time.png",
-        cssClass: "clock",
-        sound: "audio/clock-tick.mp3",
-        spawnTime: 4000,
-        spawnType: SpawnType.STATIC,
-        decisionFactor: 1/3, // this is used to determine spawn chance.
-        onEntityClick: function (em) {
-            if (!em.simulated) {
-                em.time += 5; // add 5 seconds to the timer.
-            }
-        },
-        size: ELEMENT_SIZE,
-    })
-
-    const specialCat = new Entity({
-        image: "img/golden-cat.png",
-        cssClass: "special-cat",
-        sound: "audio/meow-1.mp3",
-        spawnTime: 2000,
-        spawnType: SpawnType.STATIC,
-        decisionFactor: 1/2, // this is used to determine spawn chance.
-        onEntityClick: function (_) {
-            this.score += 1;
-        },
-
-        /**
-         *
-         * @param img
-         * @param {EntityManager} em
-         */
-        removeOverride: function(img, em) {
-            if (this.score >= 5) { // the special cat can only be removed after being clicked 5 times, which also gives the player 5 points.
-                img.remove();
-
-                em.gameScore += 5;
-                em.updateScoreText();
-                this.score = 0; // reset the score of the special cat so it can be spawned and clicked again for points.
-            } else {
-                // get bigger every click
-                const currentSize = parseInt(img.style.width);
-                img.style.width = `${currentSize + 10}px`;
-            }
-        },
-
-        size: ELEMENT_SIZE,
-    });
-
-    const main = () => {
-        const entityManager = new EntityManager();
-
-        entityManager.loadGame();
-        entityManager.setupGame();
-
-        // ——— Event Listener ———
-        startButton?.addEventListener("click", () => {
-            sm.setGame();
-
-            entityManager.addEntities(goodCat, badDog, fish, time, specialCat);
-            entityManager.setBGMusic(BACKGROUND_MUSIC);
-
-            entityManager.startGame();
-            entityManager.onEndGame = function () {
-                sm.setLeaderstats(entityManager);
-            }
+        new Typed('#splash h1', {
+            strings: ["GAME LOADING...", "LOADING ASSETS...", "files.load()", "DO YOU HAVE WHAT IT TAKES?"],
+            typeSpeed: 30,
+            showCursor: false,
         });
 
-        document.getElementById("back_to_menu")?.addEventListener("click", () => {
-            sm.setMenu();
-        });
-    }
+        setTimeout(function () {
+            new Typed('#title', {
+                strings: ["> BE THE REAL HACKER."],
+                typeSpeed: 100,
+                showCursor: false,
+            });
 
-    main();
+            new Typed('#directions', {
+                strings: ["> Your job is simple. Infiltrate the mainframe by clicking the server before time runs out. Each successful hack earns you points. If you're skilled enough, you might encounter the <b>rare</b> firewall that grants 5 bonus points!\n" +
+                "                    <br><br>\n>" +
+                "                    Hit the intrusion detection system and it's game over. Stay sharp."],
+                typeSpeed: 25,
+                showCursor: false,
+            });
+        }, 10000);
+    }
+    playAnimations();
 });
