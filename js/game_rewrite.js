@@ -1,9 +1,11 @@
 // ——— Constants ———
+// noinspection JSUnresolvedReference
+
 const DEFAULT_GAME_TIME = 25; // seconds
 const TIME_DECREMENT_MS = 1000;
 const ELEMENT_SIZE = 45;
 const BACKGROUND_MUSIC = "audio/Every_End.mp3";
-
+const PLAY_ANIMATIONS = true;
 
 let loadedLeaderboard = false;
 
@@ -21,12 +23,12 @@ const playSound = (src) => {
 function toTitleCase(str) {
     return str
         .toLowerCase() // 1. Convert the entire string to lowercase for normalization.
-        .split(' ')    // 2. Split the string into an array of words using space as a delimiter.
-        .map(function(word) { // 3. Iterate over each word in the array.
+        .split(' ')    // 2. Split the string into an array of words using space as a delimiter
+        .map(function(word) { // 3. Iterate over each word in the array
             // Capitalize the first letter and concatenate it with the rest of the word (in lowercase)
             return (word.charAt(0).toUpperCase() + word.slice(1));
         })
-        .join(' ');    // 4. Join the words back into a single string with spaces.
+        .join(' '); // 4. Join the words back into a single string with spaces
 }
 
 // ——— Enums ———
@@ -298,7 +300,7 @@ class EntityManager {
             return;
         }
 
-        const $img = $('<img>');
+        const $img = $('<img alt="A mole on the page">');
         const {x, y} = this.getRandomPosition();
 
         $img.css({
@@ -349,10 +351,12 @@ class EntityManager {
         }
     }
 
+    // noinspection JSUnusedGlobalSymbols
     setBGMusic(backgroundMusic) {
         this.bgMusic = new Audio(backgroundMusic);
         this.bgMusic.loop = true;
     }
+
     updateHighScoreText(savedScore) {
         $("#highscore").html("HIGH SCORE: " + savedScore + " pts");
     }
@@ -368,27 +372,49 @@ class EntityManager {
 // ——— Animation Functions ———
 const playAnimations = (playerName, startButton) => {
     let $splashScreen = $("#splash");
+
     $splashScreen.css("display", "flex").hide().fadeIn(1000);
     $splashScreen.delay(5000).fadeOut(10000);
     startButton.hide();
+
+    console.log("VERSION: This game version has animations loaded.");
 
     new Typed('#splash h1', {
         strings: ["GAME LOADING...", "LOADING ASSETS...", "playerInformation.retrieve({})", `HELLO, ${playerName}`,  "DO YOU HAVE WHAT IT TAKES?"],
         typeSpeed: 30,
         showCursor: false,
     });
+    let instructionString = "> Your job is simple. Infiltrate the mainframe by clicking the cute server cat before time runs out. Each successful hack earns you points. If you're skilled enough, you might encounter the <b>rare</b> firewall that grants 5 bonus points!\n" +
+        "                    <br><br>\n>" +
+        "                    Hit the intrusion detection system, and it's game over. Stay sharp.<br><br>\n> I didn't give you any access to the start button until now. Good luck.\n";
+
+    let skipped = false;
+    $("#skip_intro").click(function() {
+        startButton.show();
+        console.log("NOTE: Skipped intro.")
+
+        $("#directions").html(instructionString);
+        $("#title").html("> BE THE REAL HACKER.");
+        $("#splash").hide();
+
+        skipped = true;
+    })
 
     setTimeout(function () {
+        if (skipped) {
+            console.log("NOTE: Skipped instructions because the intro was skipped -> Instructions are assumed to be on the page already.");
+            return false;
+        }
+
         new Typed('#title', {
             strings: ["> BE THE REAL HACKER."],
             typeSpeed: 100,
             showCursor: false,
         });
 
+        // noinspection JSUnusedGlobalSymbols
         new Typed('#directions', {
-            strings: ["> Your job is simple. Infiltrate the mainframe by clicking the cute server cat before time runs out. Each successful hack earns you points. If you're skilled enough, you might encounter the <b>rare</b> firewall that grants 5 bonus points!\n" +
-            "                    <br><br>\n>" +
-            "                    Hit the intrusion detection system and it's game over. Stay sharp.<br><br>\n> I didn't give you any access to the start button until now. Good luck.\n"],
+            strings: [instructionString],
             typeSpeed: 25,
             showCursor: false,
             onComplete: function() {
@@ -401,20 +427,22 @@ const playAnimations = (playerName, startButton) => {
 $(document).ready(() => {
     // ——— DOM Elements ———
     const entityManager = new EntityManager();
-
-    const timeDisplay = $("#time");
-    const nameWelcome = $("#name_welcome");
+    $("#time");
+    $("#name_welcome");
     const startButton = $("#start_button");
 
     entityManager.promptForName();
 
     setTimeout(() => {
         let gameAudio = new Audio(BACKGROUND_MUSIC);
+
         gameAudio.loop = true;
         gameAudio.play().catch(() => {})
     }, 100);
 
-    playAnimations(entityManager.getPlayerName(), startButton);
+    if (PLAY_ANIMATIONS)
+        playAnimations(entityManager.getPlayerName(), startButton);
+    
     let serverCat = new Entity({
         image: "img/matrix_cat.webp",
         cssClass: "matrix_cat",
@@ -451,7 +479,7 @@ $(document).ready(() => {
         spawnTime: 1000,
         spawnType: SpawnType.CONTINUOUS,
         size: ELEMENT_SIZE,
-        onEntityClick: function (manager) {
+        onEntityClick: function () {
             $("#blindness").fadeIn(500).fadeOut(500);
         }
     });
