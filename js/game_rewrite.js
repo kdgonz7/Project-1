@@ -208,6 +208,7 @@ class EntityManager {
         this.time = DEFAULT_GAME_TIME;
         this.entQueue = [];
     }
+    
     saveGame() {
         if (localStorage.getItem("score") === null || this.gameScore > parseInt(localStorage.getItem("score"))) {
             localStorage.setItem("score", this.gameScore);
@@ -217,6 +218,7 @@ class EntityManager {
         localStorage.setItem("name", this.playerName);
         localStorage.setItem("credits", this.playerCredits);
     }
+
     loadGame() {
         const savedScore = localStorage.getItem("score");
         const name = localStorage.getItem("name");
@@ -280,6 +282,7 @@ class EntityManager {
 
         this.spawnEntity(ent);
     }
+
     contEntPrecheck(ent) {
         let resultOfCSS = this.gameSpace.find(`.${ent.cssClass}`);
         if (resultOfCSS.length > 0) {
@@ -300,8 +303,12 @@ class EntityManager {
             return;
         }
 
-        const $img = $('<img alt="A mole on the page">');
+        const $img = $(`<img alt="A mole (${ent.cssClass})">`);
         const {x, y} = this.getRandomPosition();
+
+        for (const entity in this.gameSpace) {
+            console.log(entity);
+        }
 
         $img.css({
             position: "absolute",
@@ -345,6 +352,7 @@ class EntityManager {
 
         this.gameSpace.append($img);
     }
+
     cleanupIntervals() {
         for (const intervalId of this.gameIntervals) {
             clearInterval(intervalId);
@@ -476,7 +484,7 @@ $(document).ready(() => {
         image: "img/blindness.png",
         cssClass: "blindness",
         sound: "audio/blindness.mp3",
-        spawnTime: 1000,
+        spawnTime: 1500,
         spawnType: SpawnType.CONTINUOUS,
         size: ELEMENT_SIZE,
         onEntityClick: function () {
@@ -488,7 +496,7 @@ $(document).ready(() => {
         image: "img/detection.png",
         cssClass: "detection_system",
         sound: "audio/detection.mp3",
-        spawnTime: 800,
+        spawnTime: 1300,
         spawnType: SpawnType.CONTINUOUS,
         size: ELEMENT_SIZE + 15,
         onEntityClick: function (manager) {
