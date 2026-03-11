@@ -13,11 +13,13 @@
     <meta charset="utf-8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link href="https://fonts.googleapis.com/css2?family=Playwrite+NZ+Basic:wght@100..400&display=swap"
           rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://code.jquery.com/ui/1.14.2/jquery-ui.js"></script>
     <script src="https://unpkg.com/typed.js@3.0.0/dist/typed.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <link rel='stylesheet' href='//cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css'>
 </head>
 <body>
@@ -28,10 +30,14 @@
         <button id="skip_intro">Skip Intro</button>
     </div>
 
+    <div id="custom_cursor" style="position: absolute">
+        <img src="img/torch%20curs.gif" alt="Torch">
+    </div>
 
     <div id="content">
         <h1>&gt; Hack the MainFrame...</h1>
         <hr>
+
 
         <div id="grid">
             <div id="mainGameInstructionsPage" class="col1">
@@ -40,6 +46,8 @@
                 </p>
 
                 <button type="button" id="start_button">Start!</button>
+
+                <svg id="graph"></svg>
             </div>
 
             <div id="gamespaceTotality" style="display: none">
@@ -73,6 +81,8 @@
 
 </body>
 <script src="js/game_rewrite.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/cursor.js"></script>
 
 </html>
 <!-- 10/28/21 -->

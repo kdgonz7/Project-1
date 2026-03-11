@@ -24,7 +24,7 @@ function toTitleCase(str) {
     return str
         .toLowerCase() // 1. Convert the entire string to lowercase for normalization.
         .split(' ')    // 2. Split the string into an array of words using space as a delimiter
-        .map(function(word) { // 3. Iterate over each word in the array
+        .map(function (word) { // 3. Iterate over each word in the array
             // Capitalize the first letter and concatenate it with the rest of the word (in lowercase)
             return (word.charAt(0).toUpperCase() + word.slice(1));
         })
@@ -35,6 +35,7 @@ function toTitleCase(str) {
 const SpawnType = {
     STATIC: "STATIC",
     CONTINUOUS: "CONTINUOUS",
+    SLIDE: "SLIDE",
 }
 
 // ——— Entity Classes ———
@@ -52,8 +53,18 @@ class Entity {
         this.onEntityClick = data.onEntityClick;
         this.removeOverride = data.removeOverride || null;
         this.size = data.size;
+        this.getAnimatePoints = data.getAnimatePoints || null;
+        this.doDecay = data.doDecay || false;
+        this.decayTime = data.decayTime || 1000;
+        this.slideEasing = data.slideEasing || "swing";
+        this.slideTimeRandomUpper = data.slideTimeRandomUpper || 5000;
+        this.slideTimeRandomLower = data.slideTimeRandomLower || 2000;
+
+        // Only used for SLIDE spawn type, defaulting to 2000ms for the slide animation duration
+        this.slideTime = data.slideTime || 2000;
     }
 }
+
 class EntityManager {
     constructor() {
         this.entQueue = [];
@@ -65,7 +76,7 @@ class EntityManager {
         this.bgMusic = null;
         this.playerName = null;
         this.playerCredits = 0;
-        this.onEndGame = function() {}
+        this.onEndGame = function () {}
     }
 
     promptForName() {
@@ -83,6 +94,7 @@ class EntityManager {
     getPlayerName() {
         return this.playerName;
     }
+
     getGameBounds() {
         const rect = this.gameSpace[0].getBoundingClientRect();
         const margin = ELEMENT_SIZE;
@@ -93,12 +105,14 @@ class EntityManager {
             maxY: rect.bottom - margin,
         };
     };
+
     getRandomPosition() {
         const bounds = this.getGameBounds();
+
         const x = Math.random() * (bounds.maxX - bounds.minX) + bounds.minX;
         const y = Math.random() * (bounds.maxY - bounds.minY) + bounds.minY;
 
-        return {x, y};
+        return [x, y];
     };
 
     updateScoreText() {
@@ -129,7 +143,7 @@ class EntityManager {
         this.entQueue.push(entity);
     }
 
-    addEntities(...entities){
+    addEntities(...entities) {
         if (entities.length === 0) {
             return;
         }
@@ -139,6 +153,9 @@ class EntityManager {
         }
     }
 
+    /**
+     * Starts the game, initializes threads given the entity pool, and plays the background music, and starts timer.
+     */
     startGame() {
         if (this.simulated === true) {
             return;
@@ -146,29 +163,46 @@ class EntityManager {
 
         if (this.bgMusic) {
             this.bgMusic.play().catch(() => {
-            })
+            });
         }
 
         const timerIntervalId = setInterval(() => this.decrementTimer(), TIME_DECREMENT_MS);
         this.gameIntervals.push(timerIntervalId);
 
+        /**
+         * WRITTEN BY AI
+         */
         for (const entity of this.entQueue) {
+            // I asked it to simplify the thread process through creating a new function createThread
+            // to add new threads and automatically store their IDs in the gameIntervals array for easy cleanup later.
+            // This way, we avoid code repetition and make it easier to manage intervals for different spawn types.
+            const createThread = (fn, id, type) => {
+                const intervalId = setInterval(fn, id);
+                this.gameIntervals.push(intervalId);
+                console.log(`Spawned ${type} entity with interval ID:`, intervalId);
+            };
+
             switch (entity.spawnType) {
                 case SpawnType.STATIC:
-                    const intervalId = setInterval(() => this.staticEntPrecheck(entity), entity.spawnTime);
-                    this.gameIntervals.push(intervalId);
-                    console.log("Spawned static entity with interval ID:", intervalId);
+                    createThread(() => this.staticEntPrecheck(entity), entity.spawnTime, "static");
                     break;
                 case SpawnType.CONTINUOUS:
-                    const continuousIntervalId = setInterval(() => this.contEntPrecheck(entity), entity.spawnTime);
-                    this.gameIntervals.push(continuousIntervalId);
-                    console.log("Spawned Continuous entity with interval ID:", continuousIntervalId);
+                    createThread(() => this.contEntPrecheck(entity), entity.spawnTime, "continuous");
+                    break;
+                case SpawnType.SLIDE:
+                    createThread(() => this.slideEntPrecheck(entity), entity.spawnTime, "slide");
                     break;
                 default:
                     console.warn("Unknown spawn type for entity:", entity);
             }
         }
     }
+
+    /**
+     * Ends the game with the given result.
+     *
+     * @param result {"win"|"lose"} - The result of the game, either "win" or "lose".
+     */
     endGame(result) {
         if (this.simulated === true) {
             console.log("endGame() called during simulation. Ignored.")
@@ -208,6 +242,7 @@ class EntityManager {
         this.time = DEFAULT_GAME_TIME;
         this.entQueue = [];
     }
+
     saveGame() {
         if (localStorage.getItem("score") === null || this.gameScore > parseInt(localStorage.getItem("score"))) {
             localStorage.setItem("score", this.gameScore);
@@ -217,6 +252,7 @@ class EntityManager {
         localStorage.setItem("name", this.playerName);
         localStorage.setItem("credits", this.playerCredits);
     }
+
     loadGame() {
         const savedScore = localStorage.getItem("score");
         const name = localStorage.getItem("name");
@@ -248,6 +284,7 @@ class EntityManager {
             this.promptForName();
         }
     }
+
     setupGame() {
         $("#time").html(`Time: ${this.time}s`);
         this.updateScoreText();
@@ -262,13 +299,83 @@ class EntityManager {
             this.endGame("win");
         }
     }
+
     updateTimeText() {
         $("#time").text(`Time: ${this.time}s`);
     }
 
+    /**
+     *
+     * @param ent {Entity}
+     */
+    slideEntPrecheck(ent) {
+        // slide entities slide between multiple points
+        // they have no checks
+
+        if (this.simulated === true) {
+            return;
+        }
+
+        // if (this.getAllInstancesOf(ent.cssClass).length > 0) {
+        //     return;
+        // }
+
+        if (!ent.getAnimatePoints) {
+            console.warn("Entity with spawnType SLIDE is missing a valid getAnimatePoints function. Entity:", ent);
+            return;
+        }
+
+        let bounds = ent.getAnimatePoints(this);
+
+        if (typeof bounds === "string" && bounds.toUpperCase() === "RANDOM") {
+            bounds = [this.getRandomPosition(), this.getRandomPosition()];
+        }
+
+        if (!Array.isArray(bounds) || bounds.length < 2) {
+            console.warn("Entity with spawnType SLIDE has an invalid getAnimatePoints return value. Expected an array of at least 2 points, where each point is an array of [y, x]. Entity:", ent, "getAnimatePoints return value:", bounds);
+            return;
+        }
+
+        let cbi = this.spawnEntity(ent);
+
+        console.log(`Exposing manager interface: ${this}`);
+        console.log("Animation Running.")
+        console.log("Bounds: " + JSON.stringify(bounds));
+        console.log("Len(Bounds)" + bounds.length);
+
+        if (ent.slideTime === "RANDOM") {
+            ent.slideTime = Math.random() * ent.slideTimeRandomUpper + ent.slideTimeRandomLower; // Random slide time between 2 and 5 seconds
+        }
+
+        $(cbi).animate({
+            top: `${bounds[0][1]}px`,
+            left: `${bounds[0][0]}px`,
+        }, ent.slideTime, ent.slideEasing, function () {
+            console.log("First animation complete for SLIDE entity. Starting second animation. Entity:", ent);
+            $(cbi).animate({
+                top: `${bounds[1][1]}px`,
+                left: `${bounds[1][0]}px`,
+            }, ent.slideTime, ent.slideEasing, function() {
+                if (ent.doDecay) {
+                    console.log("Ent Fade Out");
+                    $(cbi).fadeOut(ent.decayTime, function() {
+                        $(cbi).remove();
+                    });
+                }
+            });
+        });
+    }
+
+    getAllInstancesOf(cssClass) {
+        return this.gameSpace.find(`.${cssClass}`);
+    }
+
+    anyInstancesOf(cssClass) {
+        return this.getAllInstancesOf(cssClass).length > 0;
+    }
+
     staticEntPrecheck(ent) {
-        let resultOfCSS = this.gameSpace.find(`.${ent.cssClass}`);
-        if (resultOfCSS.length > 0) {
+        if (this.anyInstancesOf(ent.cssClass)) {
             return;
         }
 
@@ -280,10 +387,14 @@ class EntityManager {
 
         this.spawnEntity(ent);
     }
+
     contEntPrecheck(ent) {
-        let resultOfCSS = this.gameSpace.find(`.${ent.cssClass}`);
-        if (resultOfCSS.length > 0) {
-            resultOfCSS.remove();
+        let results = this.getAllInstancesOf(ent.cssClass);
+
+        if (results.length > 0) {
+            for (let i = 1; i < results.length; i++) {
+                $(results[i]).remove();
+            }
         }
 
         if (ent.decisionFactor) {
@@ -295,13 +406,20 @@ class EntityManager {
         this.spawnEntity(ent);
     }
 
+    /**
+     * This function spawns an entity and returns its jQuery object. It also handles the click event for the entity, including playing sounds, updating scores, and applying effects.
+     * @param ent
+     * @returns {*|jQuery|HTMLElement}
+     */
     spawnEntity(ent) {
         if (this.simulated === true) {
             return;
         }
 
         const $img = $('<img alt="A mole on the page">');
-        const {x, y} = this.getRandomPosition();
+        // BUG: for some reason "{}" was used instead of "[]" for destructuring the random position, which caused an error and prevented entities from spawning. This has been fixed to use "[]" for array destructuring.
+        const [x, y] = this.getRandomPosition();
+        console.log("Spawning mole at position:", {x, y});
 
         $img.css({
             position: "absolute",
@@ -322,13 +440,16 @@ class EntityManager {
 
             if (typeof ent.sound === "string") {
                 playSound(ent.sound);
-            }
-            else if (Array.isArray(ent.sound)) {
+            } else if (Array.isArray(ent.sound)) {
                 const random = Math.floor(Math.random() * ent.sound.length);
                 playSound(ent.sound[random]);
             }
 
-            ent.onEntityClick(this);
+            // onEntityClick can return true to prevent default click behavior (removing the entity and applying fx)
+            if (ent.onEntityClick(this) === true) {
+                console.log("Entity's onEntityClick function returned true, preventing default click behavior for this entity.");
+                return;
+            }
 
             if (ent.fxFunction) {
                 ent.fxFunction(this);
@@ -344,7 +465,10 @@ class EntityManager {
         });
 
         this.gameSpace.append($img);
+
+        return $img;
     }
+
     cleanupIntervals() {
         for (const intervalId of this.gameIntervals) {
             clearInterval(intervalId);
@@ -360,10 +484,12 @@ class EntityManager {
     updateHighScoreText(savedScore) {
         $("#highscore").html("HIGH SCORE: " + savedScore + " pts");
     }
+
     updatePlayerCredits(number) {
         this.playerCredits = parseInt(number);
         $("#credits").html(`Credits: ${this.playerCredits} cc`);
     }
+
     addPlayerCredits(number) {
         this.updatePlayerCredits(this.playerCredits + number);
     }
@@ -380,7 +506,7 @@ const playAnimations = (playerName, startButton) => {
     console.log("VERSION: This game version has animations loaded.");
 
     new Typed('#splash h1', {
-        strings: ["GAME LOADING...", "LOADING ASSETS...", "playerInformation.retrieve({})", `HELLO, ${playerName}`,  "DO YOU HAVE WHAT IT TAKES?"],
+        strings: ["GAME LOADING...", "LOADING ASSETS...", "playerInformation.retrieve({})", `HELLO, ${playerName}`, "DO YOU HAVE WHAT IT TAKES?"],
         typeSpeed: 30,
         showCursor: false,
     });
@@ -389,7 +515,7 @@ const playAnimations = (playerName, startButton) => {
         "                    Hit the intrusion detection system, and it's game over. Stay sharp.<br><br>\n> I didn't give you any access to the start button until now. Good luck.\n";
 
     let skipped = false;
-    $("#skip_intro").click(function() {
+    $("#skip_intro").click(function () {
         startButton.show();
         console.log("NOTE: Skipped intro.")
 
@@ -417,7 +543,7 @@ const playAnimations = (playerName, startButton) => {
             strings: [instructionString],
             typeSpeed: 25,
             showCursor: false,
-            onComplete: function() {
+            onComplete: function () {
                 startButton.fadeIn(2000);
             }
         });
@@ -437,12 +563,13 @@ $(document).ready(() => {
         let gameAudio = new Audio(BACKGROUND_MUSIC);
 
         gameAudio.loop = true;
-        gameAudio.play().catch(() => {})
+        gameAudio.play().catch(() => {
+        })
     }, 100);
 
     if (PLAY_ANIMATIONS)
         playAnimations(entityManager.getPlayerName(), startButton);
-    
+
     let serverCat = new Entity({
         image: "img/matrix_cat.webp",
         cssClass: "matrix_cat",
@@ -465,7 +592,7 @@ $(document).ready(() => {
         spawnType: SpawnType.STATIC,
         decisionFactor: 0.3,
         size: ELEMENT_SIZE + 10,
-        onEntityClick:  function (mgr) {
+        onEntityClick: function (mgr) {
             mgr.gameScore += 5;
             this.score += 5;
             mgr.updateScoreText();
@@ -496,15 +623,42 @@ $(document).ready(() => {
         }
     });
 
+
+    let slideTest = new Entity({
+        image: "img/firewall.png",
+        cssClass: "detection_system",
+        sound: "audio/detection.mp3",
+        score: 0,
+        spawnTime: 800,
+        spawnType: SpawnType.SLIDE,
+
+        slideTime: "RANDOM",
+        slideTimeRandomLower: 500,
+        slideTimeRandomUpper: 2000,
+        slideEasing: "swing",
+        doDecay: true,
+        decayTime: 500,
+        getAnimatePoints: function () {
+            return "RANDOM";
+        },
+
+        size: ELEMENT_SIZE + 15,
+        onEntityClick: function (manager) {
+            manager.gameScore += 1;
+            manager.updateScoreText();
+            this.score ++;
+        }
+    });
+
     startButton.click(() => {
         entityManager.loadGame();
         entityManager.setupGame();
-        entityManager.addEntities(serverCat, firewall, blindness, detectionSystem);
+        entityManager.addEntities(slideTest);
 
         $("#mainGameInstructionsPage").fadeOut(1000);
         $("#gamespaceTotality").fadeIn(1000, () => {
             entityManager.startGame();
-            entityManager.onEndGame = function(entReport) {
+            entityManager.onEndGame = function (entReport) {
                 $("#gamespaceTotality").fadeOut(1000, () => {
                     $("#leaderstats").fadeIn(1000);
 
@@ -538,3 +692,6 @@ $(document).ready(() => {
         });
     });
 });
+
+
+
