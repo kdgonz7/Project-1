@@ -8,7 +8,7 @@ html, body {
     margin: 0;
     padding: 0;
     color: #55ff00;
-    background:  url("../img/catwalking.gif") no-repeat center center fixed;
+    background: url("../img/catwalking.gif") no-repeat center center fixed;
     background-size: cover;
 }
 
@@ -26,8 +26,8 @@ html, body {
     text-align: center;
     display: flex;
     justify-content: center; /* Horizontal */
-    align-items: center;     /* Vertical */
-    height: 100vh;           /* Full viewport height */
+    align-items: center; /* Vertical */
+    height: 100vh; /* Full viewport height */
     color: #55ff00;
 }
 
@@ -51,15 +51,15 @@ button {
 /* bottom left */
 #skip_intro {
     position: absolute;
-    bottom: 10%;          /* Aligns to the bottom edge */
-    left: 10%;            /* Aligns to the left edge */
+    bottom: 10%; /* Aligns to the bottom edge */
+    left: 10%; /* Aligns to the left edge */
     background-color: #000000;
 }
 
 #toggle_cursor {
     position: absolute;
-    bottom: 10%;          /* Aligns to the bottom edge */
-    left: 15%;            /* Aligns to the left edge */
+    bottom: 10%; /* Aligns to the bottom edge */
+    left: 15%; /* Aligns to the left edge */
     background-color: #000000;
 }
 
@@ -102,7 +102,6 @@ button {
     color: #55ff00;
     border: 1px solid gray;
     border-radius: 5px;
-    cursor: pointer;
     font-size: 14px;
     font-weight: bold;
     box-shadow: 0 0 10px rgba(85, 255, 0, 0.3);
@@ -118,7 +117,6 @@ button:active {
     transform: translateY(3px);
     background-color: #3d54c8;
 }
-
 
 #info {
     background-color: #000000;
