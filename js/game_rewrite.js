@@ -20,6 +20,13 @@ const playSound = (src) => {
     }
 };
 
+/**
+ * Converts the given string to title case.
+ *
+ * Used in CSS classes.
+ * @param str
+ * @returns {string}
+ */
 function toTitleCase(str) {
     return str
         .toLowerCase() // 1. Convert the entire string to lowercase for normalization.
@@ -41,27 +48,141 @@ const SpawnType = {
 // ——— Entity Classes ———
 class Entity {
     constructor(data) {
+        /**
+         * The image used for the entity.
+         *
+         * The image can be anything usable for the most part.
+         * @type {string|boolean|VideoFrame|*}
+         */
         this.image = data.image;
+
+        /**
+         * Defines the entity's CSS Class. This is essential not only for the CSS styling of entities, but also for their unique IDs.
+         *
+         * If two entities have the same CSS class, then the EntityManager will break apart the functionality to them largely in the same way.
+         *
+         * @type {string}
+         */
         this.cssClass = data.cssClass;
+
+        /**
+         * Defines the entity's encapsulated score. Used in leaderboards and statistics.
+         * @type {*|number}
+         */
         this.score = data.score || 0;
+
+        /**
+         * The sound that the entity will play when it is clicked.
+         *
+         * *NOTE*: this functionality is somewhat archaic and barebones, and for any level-systems, or any system where granular control is preferred,
+         * you can instead use {@link removeOverride} and {@link onEntityClick} to define your sounds.
+         * @type {string[]|*}
+         */
         this.sound = data.sound;
+
+        /**
+         * Defines the timing for which the Entity's thread will run.
+         *
+         * Threading is handled by {@link EntityManager.startGame}.
+         * @type {number|*}
+         */
         this.spawnTime = data.spawnTime;
+
+        /**
+         * Defines the spawn type of the entity. The EntityManager supports different use cases.
+         * @type {SpawnType}
+         */
         this.spawnType = data.spawnType;
+
+        /**
+         * The fxFunction is deprecated.
+         *
+         * Originally was meant to be a function for handling FX. The better suited and well-supported function is {@link removeOverride}
+         *
+         * @type {function(emg: EntityManager)}
+         * @deprecated
+         */
         this.fxFunction = data.fxFunction;
+
+        /**
+         * The decision factor is a number between 0 and 1 that defines the probability of the entity spawning.
+         *
+         * This functionality is largely deterministic.
+         * @type {float}
+         */
         this.decisionFactor = data.decisionFactor || 1;
+
+        /**
+         * A calculated variable that defines if an entity should be shown in stat boards (leaderboard, etc.)
+         *
+         * Any external {@link Entity} managements should respect this variable.
+         *
+         * ### Calculation
+         *
+         * If an entity's {@link onEntityClick} function does not utilize the {@link EntityManager.gameScore} or {@link Entity.score}
+         * objects, then it will be removed from the stats viewers. The {@link EntityManager} class runs the entity's click function through a simulated
+         * instance to find this information.
+         */
         this.disableFromStats = data.disableFromStats;
+
+        /**
+         * A function that runs whenever an entity is clicked.
+         *
+         * Designed for more basic, primitive actions such as:
+         * - Updating the score
+         * - Losing the game
+         * - Playing a second-hand sound effect
+         *
+         * This function is mostly managed by the EntityManager. You should use {@link removeOverride} if you want to handle the removal of the entity and any effects related to that removal yourself, such as playing a death animation or fading out the entity before removal.
+         */
         this.onEntityClick = data.onEntityClick;
-        this.removeOverride = data.removeOverride || null;
+
+        /**
+         * Basic primitive type that defines the size.
+         * @type {number}
+         */
         this.size = data.size;
+
+        /**
+         * Remove override is similar to onEntityClick except it exposes more information about the entity. Unlike {@link onEntityClick},
+         * RemoveOverride will have both the jQuery image and the manager passed in, and is expected to handle the removal of the entity itself. This allows for more complex removal effects, such as fading out or playing an animation before removal.
+         * @type {function(HTMLElement, EntityManager)|null}
+         */
+        this.removeOverride = data.removeOverride || null;
+
+        /**
+         * `getAnimatePoints` is a data function that should return either:
+         * - `"RANDOM"` -> Will pass the responsibility to the game manager to generate 2 random points within the game bounds for the slide animation.
+         * - An array of at least 2 points, where each point is an array of [x, y] coordinates, which will be used as the start and end points for the slide animation.
+         * @type {*|(function(): string)|null}
+         */
         this.getAnimatePoints = data.getAnimatePoints || null;
+
+        /**
+         * Allow the entity manager to handle the fade out of this entity after a certain point.
+         *
+         * Primarily works with SLIDE and CONTINUOUS entities. If true, the entity will fade out after completing its animation (for SLIDE) or after spawning (for CONTINUOUS), and then be removed from the game space. The duration of the fade out can be controlled with the `decayTime` property.
+         * @type {*|boolean}
+         */
         this.doDecay = data.doDecay || false;
         this.decayTime = data.decayTime || 1000;
+
+        /**
+         * The slide easing defines the type of easing used to render the slide by jQuery.
+         *
+         * Only valid when entity type is SLIDE.
+         * @type {*|string}
+         */
         this.slideEasing = data.slideEasing || "swing";
+
+        /**
+         * Defines the sliding time between points for the SLIDE entity type.
+         * If set to "RANDOM", the game manager will generate a random slide time between `slideTimeRandomLower` and `slideTimeRandomUpper` for each animation instance of this entity. Otherwise, it should be a number representing the slide time in milliseconds.
+         * @type {*|string|number}
+         */
+        this.slideTime = data.slideTime || 2000;
         this.slideTimeRandomUpper = data.slideTimeRandomUpper || 5000;
         this.slideTimeRandomLower = data.slideTimeRandomLower || 2000;
-
-        // Only used for SLIDE spawn type, defaulting to 2000ms for the slide animation duration
-        this.slideTime = data.slideTime || 2000;
     }
 }
 
@@ -76,7 +197,8 @@ class EntityManager {
         this.bgMusic = null;
         this.playerName = null;
         this.playerCredits = 0;
-        this.onEndGame = function () {}
+        this.onEndGame = function () {
+        }
         this.locked = false;
         this.simulated = false;
     }
@@ -371,10 +493,10 @@ class EntityManager {
             $(cbi).animate({
                 top: `${bounds[1][1]}px`,
                 left: `${bounds[1][0]}px`,
-            }, ent.slideTime, ent.slideEasing, function() {
+            }, ent.slideTime, ent.slideEasing, function () {
                 if (ent.doDecay) {
                     console.log("Ent Fade Out");
-                    $(cbi).fadeOut(ent.decayTime, function() {
+                    $(cbi).fadeOut(ent.decayTime, function () {
                         $(cbi).remove();
                     });
                 }
@@ -588,8 +710,6 @@ $(document).ready(() => {
         playAnimations(entityManager.getPlayerName(), startButton);
 
 
-
-
     let slideTest = new Entity({
         image: "img/firewall.png",
         cssClass: "slider",
@@ -615,11 +735,11 @@ $(document).ready(() => {
         size: ELEMENT_SIZE + 15,
         onEntityClick: function (manager) {
             manager.gameScore += 1;
-            this.score ++;
+            this.score++;
         },
 
 
-        removeOverride: function(img, manager) {
+        removeOverride: function (img, manager) {
             let imagePosition = img.getBoundingClientRect();
             let explosion = $("<img alt=\"explosion\" src='../img/heart.gif' class='heart_explosion'>");
 
@@ -643,7 +763,7 @@ $(document).ready(() => {
         entityManager.addEntities(slideTest);
 
         entityManager.lock();
-
+        $("body").css("background", "url('img/matrixrain.gif') no-repeat center center fixed").css("background-size", "cover");
         $("#mainGameInstructionsPage").fadeOut(1000);
         $("#gamespaceTotality").fadeIn(1000, () => {
             entityManager.startGame();
@@ -683,6 +803,3 @@ $(document).ready(() => {
         });
     });
 });
-
-
-
