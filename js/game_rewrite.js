@@ -47,7 +47,7 @@ const SpawnType = {
 
 // ——— Entity Classes ———
 class Entity {
-    constructor(data) {
+    setupEntityWithData(data) {
         /**
          * The image used for the entity.
          *
@@ -199,6 +199,32 @@ class Entity {
          * @type {*|number}
          */
         this.slideSteps = data.slideSteps || 2;
+    }
+
+    setupEntityWithClasses(GeneralEntityInformation, SpawnInformation, DecayInformation, SlideInformation, EntityImplementation) {
+        this.image = GeneralEntityInformation.image;
+        this.cssClass = GeneralEntityInformation.cssClass;
+        this.sound = GeneralEntityInformation.sound;
+        this.score = GeneralEntityInformation.score;
+        this.size = GeneralEntityInformation.size;
+
+        this.spawnTime = SpawnInformation.spawnTime;
+        this.spawnType = SpawnInformation.spawnType;
+        this.decisionFactor = SpawnInformation.decisionFactor;
+
+        this.doDecay = DecayInformation.doDecay;
+        this.decayTime = DecayInformation.decayTime;
+
+        this.slideTime = SlideInformation.time;
+        this.getAnimatePoints = SlideInformation.bounds;
+        this.slideSteps = SlideInformation.steps;
+        this.slideEasing = SlideInformation.easing;
+        this.slideTimeRandomUpper = SlideInformation.upper;
+        this.slideTimeRandomLower = SlideInformation.lower;
+
+        this.onEntityClick = EntityImplementation.onEntityClick;
+        this.onEntitySpawn = EntityImplementation.onEntitySpawn;
+        this.removeOverride = EntityImplementation.removeOverride;
     }
 }
 
@@ -689,6 +715,48 @@ class EntityManager {
     }
 }
 
+
+class GeneralEntityInformation {
+    constructor(image, cssClass, sound, score, size) {
+        this.image = image;
+        this.cssClass = cssClass;
+        this.sound = sound;
+        this.score = score;
+        this.size = size;
+    }
+}
+class SpawnInformation {
+    constructor(spawnTime, spawnType, decisionFactor) {
+        this.spawnTime = spawnTime;
+        this.spawnType = spawnType;
+        this.decisionFactor = decisionFactor;
+    }
+}
+class DecayInformation {
+    constructor(doDecay, decayTime) {
+        this.doDecay = doDecay;
+        this.decayTime = decayTime;
+    }
+}
+class SlideInformation {
+    // NOTE: upper and lower CAN BE NULL if bounds is not "RANDOM"
+    constructor(time, bounds, steps, easing, upper, lower) {
+        this.time = time;
+        this.bounds = bounds;
+        this.steps = steps;
+        this.easing = easing;
+        this.upper = upper;
+        this.lower = lower;
+    }
+}
+class EntityImplementation {
+    constructor(data) {
+        this.onEntityClick = data.onEntityClick;
+        this.onEntitySpawn = data.onEntitySpawn;
+        this.removeOverride = data.removeOverride;
+    }
+}
+
 // ——— Animation Functions ———
 const playAnimations = (playerName, startButton) => {
     let $splashScreen = $("#splash");
@@ -765,7 +833,8 @@ $(document).ready(() => {
         playAnimations(entityManager.getPlayerName(), startButton);
 
 
-    let slideTest = new Entity({
+    let slideTest = new Entity();
+    slideTest.setupEntityWithData({
         image: "img/firewall.png",
         cssClass: "slider",
         sound: [
@@ -813,7 +882,8 @@ $(document).ready(() => {
         }
     });
 
-    let moverFish = new Entity({
+    let moverFish = new Entity();
+    moverFish.setupEntityWithData({
         image: "img/matrix_cat.png",
         cssClass: "fish",
         sound: [
@@ -865,11 +935,56 @@ $(document).ready(() => {
         }
     });
 
+    let testFish = new Entity();
+    testFish.setupEntityWithClasses(
+        new GeneralEntityInformation(
+            "img/matrix_cat.png",
+            "testfish",
+            [
+                "audio/meow-1.mp3",
+                "audio/meow-2.mp3",
+                "audio/meow-3.mp3"
+            ],
+            0,
+            ELEMENT_SIZE,
+        ),
+        new SpawnInformation(
+            800,
+            SpawnType.SLIDE,
+            null
+        ),
+
+        new DecayInformation(
+            true,
+            1000
+        ),
+
+        new SlideInformation(
+            "RANDOM",
+            function () {
+                return "RANDOM";
+            },
+            8,
+            "swing",
+            1000,
+            500
+        ),
+
+        new EntityImplementation({
+            onEntityClick: function(manager) {
+                manager.gameScore += 1;
+                this.score++;
+            },
+
+            onEntitySpawn: function(manager) {},
+        })
+    );
+
     startButton.click(() => {
         if (entityManager.isLocked()) return;
         entityManager.loadGame();
         entityManager.setupGame();
-        entityManager.addEntities(slideTest, moverFish);
+        entityManager.addEntities(slideTest, testFish);
 
         entityManager.lock();
         $("body").css("background", "url('img/matrixrain.gif') no-repeat center center fixed").css("background-size", "cover");
