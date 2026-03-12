@@ -28,6 +28,7 @@
     <div id="splash" style="display: none">
         <h1>Loading...</h1>
         <button id="skip_intro">Skip Intro</button>
+        <button id="toggle_cursor">Toggle Crossbow Cursor (For Fun)</button>
     </div>
 
     <div id="custom_cursor" style="position: absolute">
@@ -38,44 +39,39 @@
         <h1>&gt; Hack the MainFrame...</h1>
         <hr>
 
+        <div id="mainGameInstructionsPage" class="col1">
+            <h3 id="title">Welcome...</h3>
+            <p id="directions">
+            </p>
 
-        <div id="grid">
-            <div id="mainGameInstructionsPage" class="col1">
-                <h3 id="title">Welcome...</h3>
-                <p id="directions">
-                </p>
+            <button type="button" id="start_button">Start!</button>
 
-                <button type="button" id="start_button">Start!</button>
-
-                <svg id="graph"></svg>
-            </div>
-
-            <div id="gamespaceTotality" style="display: none">
-                <div id="info">
-                    <p><span id="score">0 pts</span></p>
-                    <p><span id="credits">Credits: 0cc</span></p>
-                    <p><span id="highscore">0 pts</span></p>
-                    <p><span id="time">...</span></p>
-                </div>
-                <div id="gamespace"></div>
-                <div id="progbar"></div>
-            </div>
-
-            <div id="leaderstats" style="display: none">
-                <table id="leaderboardt">
-                    <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Score</th>
-                    </tr>
-                    </thead>
-                </table>
-                <button type="button" id="back_to_menu">Play Again</button>
-            </div>
+            <svg id="graph"></svg>
         </div>
 
-    </div><!--ends content div -->
+        <div id="gamespaceTotality" style="display: none">
+            <div id="info">
+                <p><span id="score">0 pts</span></p>
+                <p><span id="credits">Credits: 0cc</span></p>
+                <p><span id="highscore">0 pts</span></p>
+                <p><span id="time">...</span></p>
+            </div>
+            <div id="gamespace"></div>
+            <div id="progbar"></div>
+        </div>
 
+        <div id="leaderstats" style="display: none">
+            <table id="leaderboardt">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Score</th>
+                </tr>
+                </thead>
+            </table>
+            <button type="button" id="back_to_menu">Play Again</button>
+        </div>
+    </div><!--ends content div -->
 </div>
 <div id="blindness" style="display: none"></div>
 

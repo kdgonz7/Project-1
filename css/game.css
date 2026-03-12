@@ -8,7 +8,7 @@ html, body {
     margin: 0;
     padding: 0;
     color: #55ff00;
-    background: #000000 url("../img/catwalking.gif") no-repeat center center fixed;
+    background:  url("../img/catwalking.gif") no-repeat center center fixed;
     background-size: cover;
 }
 
@@ -29,10 +29,6 @@ html, body {
     align-items: center;     /* Vertical */
     height: 100vh;           /* Full viewport height */
     color: #55ff00;
-}
-
-body {
-    background: #000000;
 }
 
 h1 {
@@ -60,9 +56,17 @@ button {
     background-color: #000000;
 }
 
+#toggle_cursor {
+    position: absolute;
+    bottom: 10%;          /* Aligns to the bottom edge */
+    left: 15%;            /* Aligns to the left edge */
+    background-color: #000000;
+}
+
 #gamespace {
-    width: 100%;
-    height: 100%;
+    height: 75vh;
+    width: 75%;
+    flex-grow: 1;
     background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("../img/matrix.gif");
     border: 1px gray solid;
     border-radius: 1px;
@@ -86,10 +90,11 @@ button {
     color: #55ff00;
     font-size: 16px;
     border: 1px gray solid;
-    width: 100%;
+    width: 60%;
     height: 150%;
     padding: 30px;
     margin: auto;
+    background-color: black;
 }
 
 button {
@@ -114,11 +119,6 @@ button:active {
     background-color: #3d54c8;
 }
 
-#grid {
-    width: 60%;
-    margin: auto;
-    transition: 1s all ease;
-}
 
 #info {
     background-color: #000000;
@@ -130,9 +130,11 @@ button:active {
     width: 10%;
     height: 100%;
 }
-#info, #gamespace {
+
+#info {
     padding: 15px;
 }
+
 #gamespaceTotality {
     display: flex;
     justify-content: center;
@@ -150,7 +152,8 @@ button:active {
     color: #55ff00;
     font-size: 16px;
     font-weight: bold;
-    width: 100%;
+    width: 60%;
+    margin: auto;
     height: 100%;
     padding: 10px;
 }

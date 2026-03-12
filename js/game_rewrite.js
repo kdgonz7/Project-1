@@ -77,6 +77,20 @@ class EntityManager {
         this.playerName = null;
         this.playerCredits = 0;
         this.onEndGame = function () {}
+        this.locked = false;
+        this.simulated = false;
+    }
+
+    lock() {
+        this.locked = true;
+    }
+
+    unlock() {
+        this.locked = false;
+    }
+
+    isLocked() {
+        return this.locked;
     }
 
     promptForName() {
@@ -223,7 +237,6 @@ class EntityManager {
             }
 
             entsString += `Entity: ${toTitleCase(ent.cssClass)}, Score: ${ent.score}\n`;
-            ent.score = 0;
         }
 
         this.addPlayerCredits(this.gameScore * 0.56);
@@ -231,16 +244,19 @@ class EntityManager {
 
         alert(`Stats:\nTime Left: ${this.time}s\nScore: ${this.gameScore}`);
         alert(`Entities:\n${entsString}`);
+
         if (this.onEndGame) {
             console.log("Running onEndGame callback with available entities: ", this.entQueue);
             this.onEndGame(this.entQueue);
         }
+
         this.cleanupIntervals();
         this.saveGame();
 
 
         this.time = DEFAULT_GAME_TIME;
         this.entQueue = [];
+        this.gameScore = 0;
     }
 
     saveGame() {
@@ -416,7 +432,8 @@ class EntityManager {
             return;
         }
 
-        const $img = $('<img alt="A mole on the page">');
+        const $img = $('<img alt="A mole on the page" src="">');
+
         // BUG: for some reason "{}" was used instead of "[]" for destructuring the random position, which caused an error and prevented entities from spawning. This has been fixed to use "[]" for array destructuring.
         const [x, y] = this.getRandomPosition();
         console.log("Spawning mole at position:", {x, y});
@@ -570,64 +587,17 @@ $(document).ready(() => {
     if (PLAY_ANIMATIONS)
         playAnimations(entityManager.getPlayerName(), startButton);
 
-    let serverCat = new Entity({
-        image: "img/matrix_cat.webp",
-        cssClass: "matrix_cat",
-        sound: "audio/meow-1.mp3",
-        spawnTime: 1500,
-        spawnType: SpawnType.CONTINUOUS,
-        size: ELEMENT_SIZE,
-        onEntityClick: function (manager) {
-            this.score += 1;
-            manager.gameScore += 1;
-            manager.updateScoreText();
-        }
-    });
 
-    let firewall = new Entity({
-        image: "img/firewall.webp",
-        cssClass: "firewall",
-        sound: "audio/firewall.mp3",
-        spawnTime: 7000,
-        spawnType: SpawnType.STATIC,
-        decisionFactor: 0.3,
-        size: ELEMENT_SIZE + 10,
-        onEntityClick: function (mgr) {
-            mgr.gameScore += 5;
-            this.score += 5;
-            mgr.updateScoreText();
-        }
-    });
-
-    let blindness = new Entity({
-        image: "img/blindness.png",
-        cssClass: "blindness",
-        sound: "audio/blindness.mp3",
-        spawnTime: 1000,
-        spawnType: SpawnType.CONTINUOUS,
-        size: ELEMENT_SIZE,
-        onEntityClick: function () {
-            $("#blindness").fadeIn(500).fadeOut(500);
-        }
-    });
-
-    let detectionSystem = new Entity({
-        image: "img/detection.png",
-        cssClass: "detection_system",
-        sound: "audio/detection.mp3",
-        spawnTime: 800,
-        spawnType: SpawnType.CONTINUOUS,
-        size: ELEMENT_SIZE + 15,
-        onEntityClick: function (manager) {
-            manager.endGame("lose");
-        }
-    });
 
 
     let slideTest = new Entity({
         image: "img/firewall.png",
-        cssClass: "detection_system",
-        sound: "audio/detection.mp3",
+        cssClass: "slider",
+        sound: [
+            "audio/meow-1.mp3",
+            "audio/meow-2.mp3",
+            "audio/meow-3.mp3"
+        ],
         score: 0,
         spawnTime: 800,
         spawnType: SpawnType.SLIDE,
@@ -645,15 +615,34 @@ $(document).ready(() => {
         size: ELEMENT_SIZE + 15,
         onEntityClick: function (manager) {
             manager.gameScore += 1;
-            manager.updateScoreText();
             this.score ++;
+        },
+
+
+        removeOverride: function(img, manager) {
+            let imagePosition = img.getBoundingClientRect();
+            let explosion = $("<img alt=\"explosion\" src='../img/heart.gif' class='heart_explosion'>");
+
+            explosion.css({
+                position: "absolute",
+                top: imagePosition.top,
+                left: imagePosition.left,
+                width: `${ELEMENT_SIZE + 20}px`
+            });
+
+            manager.gameSpace.append(explosion);
+            explosion.fadeOut(900);
+            img.remove();
         }
     });
 
     startButton.click(() => {
+        if (entityManager.isLocked()) return;
         entityManager.loadGame();
         entityManager.setupGame();
         entityManager.addEntities(slideTest);
+
+        entityManager.lock();
 
         $("#mainGameInstructionsPage").fadeOut(1000);
         $("#gamespaceTotality").fadeIn(1000, () => {
@@ -662,7 +651,7 @@ $(document).ready(() => {
                 $("#gamespaceTotality").fadeOut(1000, () => {
                     $("#leaderstats").fadeIn(1000);
 
-                    console.log("Showing leaderboard statistics. Current entities in manager:", entityManager.entQueue);
+                    console.log("Showing leaderboard statistics. Current entities in manager:", entReport);
                     // populate leaderstats with score for each entity in entity manager
 
                     if (!loadedLeaderboard) {
@@ -670,10 +659,10 @@ $(document).ready(() => {
 
                         for (const ent of entReport) {
                             console.log(ent);
+
                             if (ent.disableFromStats) {
                                 continue;
                             }
-
 
                             let row = `<tr><td>${toTitleCase(ent.cssClass)}</td><td>${ent.score}</td></tr>`;
                             tableLeaderboard.append(row);
@@ -681,6 +670,8 @@ $(document).ready(() => {
 
                         loadedLeaderboard = true;
                     }
+
+                    entityManager.unlock();
                 });
             }
         });
