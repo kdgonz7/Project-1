@@ -138,6 +138,14 @@ class Entity {
         this.onEntityClick = data.onEntityClick;
 
         /**
+         * onEntitySpawn is a function that runs whenever an entity's thread spawns it. It is designed for pre-spawn checks, such as checking if there are already entities of the same type on the field, or if certain conditions are met before allowing the entity to spawn.
+         * @type {*|(function(*): boolean)|(function(): boolean)}
+         */
+        this.onEntitySpawn = data.onEntitySpawn || function () {
+            return true;
+        };
+
+        /**
          * Basic primitive type that defines the size.
          * @type {number}
          */
@@ -183,6 +191,14 @@ class Entity {
         this.slideTime = data.slideTime || 2000;
         this.slideTimeRandomUpper = data.slideTimeRandomUpper || 5000;
         this.slideTimeRandomLower = data.slideTimeRandomLower || 2000;
+
+        /**
+         * Defines the amount of steps that the entity takes whenever it slides around.
+         *
+         * By default, it's two, meaning that it will slide two steps (from point A to point B, then from point B to point A). If set to 1, it will only slide from point A to point B and then stop. If set to a number higher than 2, it will continue sliding between the points for the amount of steps defined (e.g., if set to 4, it will slide from A to B, then B to C, then C to D, and then stop).
+         * @type {*|number}
+         */
+        this.slideSteps = data.slideSteps || 2;
     }
 }
 
@@ -379,6 +395,11 @@ class EntityManager {
         this.time = DEFAULT_GAME_TIME;
         this.entQueue = [];
         this.gameScore = 0;
+
+        // flush each entity's score to 0
+        for (const ent of this.entQueue) {
+            ent.score = 0;
+        }
     }
 
     saveGame() {
@@ -466,11 +487,15 @@ class EntityManager {
         let bounds = ent.getAnimatePoints(this);
 
         if (typeof bounds === "string" && bounds.toUpperCase() === "RANDOM") {
-            bounds = [this.getRandomPosition(), this.getRandomPosition()];
+            bounds = [];
+
+            for (let i = 0 ; i < ent.slideSteps ; i++) {
+                bounds.push(this.getRandomPosition());
+            }
         }
 
-        if (!Array.isArray(bounds) || bounds.length < 2) {
-            console.warn("Entity with spawnType SLIDE has an invalid getAnimatePoints return value. Expected an array of at least 2 points, where each point is an array of [y, x]. Entity:", ent, "getAnimatePoints return value:", bounds);
+        if (!Array.isArray(bounds) || bounds.length < ent.slideSteps) {
+            console.warn("Entity with spawnType SLIDE has an invalid getAnimatePoints return value. Expected an array of at least " + ent.slideSteps + " points, where each point is an array of [y, x]. Entity:", ent, "getAnimatePoints return value:", bounds);
             return;
         }
 
@@ -485,23 +510,41 @@ class EntityManager {
             ent.slideTime = Math.random() * ent.slideTimeRandomUpper + ent.slideTimeRandomLower; // Random slide time between 2 and 5 seconds
         }
 
-        $(cbi).animate({
-            top: `${bounds[0][1]}px`,
-            left: `${bounds[0][0]}px`,
-        }, ent.slideTime, ent.slideEasing, function () {
-            console.log("First animation complete for SLIDE entity. Starting second animation. Entity:", ent);
-            $(cbi).animate({
-                top: `${bounds[1][1]}px`,
-                left: `${bounds[1][0]}px`,
-            }, ent.slideTime, ent.slideEasing, function () {
-                if (ent.doDecay) {
-                    console.log("Ent Fade Out");
-                    $(cbi).fadeOut(ent.decayTime, function () {
-                        $(cbi).remove();
-                    });
-                }
+
+        let animateElement = $(cbi);
+
+        for (let i = 0; i < ent.slideSteps; i++) {
+            animateElement.animate(
+                {
+                    top: `${bounds[i][1]}px`,
+                    left: `${bounds[i][0]}px`,
+                },
+                ent.slideTime,
+            ).promise();
+        }
+
+        if (ent.doDecay) {
+            animateElement.fadeOut(ent.decayTime, function () {
+                animateElement.remove();
             });
-        });
+        }
+        // $(cbi).animate({
+        //     top: `${bounds[0][1]}px`,
+        //     left: `${bounds[0][0]}px`,
+        // }, ent.slideTime, ent.slideEasing, function () {
+        //     console.log("First animation complete for SLIDE entity. Starting second animation. Entity:", ent);
+        //     $(cbi).animate({
+        //         top: `${bounds[1][1]}px`,
+        //         left: `${bounds[1][0]}px`,
+        //     }, ent.slideTime, ent.slideEasing, function () {
+        //         if (ent.doDecay) {
+        //             console.log("Ent Fade Out");
+        //             $(cbi).fadeOut(ent.decayTime, function () {
+        //                 $(cbi).remove();
+        //             });
+        //         }
+        //     });
+        // });
     }
 
     getAllInstancesOf(cssClass) {
@@ -513,6 +556,10 @@ class EntityManager {
     }
 
     staticEntPrecheck(ent) {
+        if (ent.onEntitySpawn(this) === false) {
+            return;
+        }
+
         if (this.anyInstancesOf(ent.cssClass)) {
             return;
         }
@@ -527,6 +574,10 @@ class EntityManager {
     }
 
     contEntPrecheck(ent) {
+        if (ent.onEntitySpawn(this) === false) {
+            return;
+        }
+
         let results = this.getAllInstancesOf(ent.cssClass);
 
         if (results.length > 0) {
@@ -550,6 +601,10 @@ class EntityManager {
      * @returns {*|jQuery|HTMLElement}
      */
     spawnEntity(ent) {
+        if (ent.onEntitySpawn(this) === false) {
+            return;
+        }
+
         if (this.simulated === true) {
             return;
         }
@@ -723,9 +778,11 @@ $(document).ready(() => {
         spawnType: SpawnType.SLIDE,
 
         slideTime: "RANDOM",
-        slideTimeRandomLower: 500,
+        slideTimeRandomLower: 1000,
         slideTimeRandomUpper: 2000,
+        slideSteps: 2,
         slideEasing: "swing",
+
         doDecay: true,
         decayTime: 500,
         getAnimatePoints: function () {
@@ -756,11 +813,63 @@ $(document).ready(() => {
         }
     });
 
+    let moverFish = new Entity({
+        image: "img/matrix_cat.png",
+        cssClass: "fish",
+        sound: [
+            "audio/meow-1.mp3",
+            "audio/meow-2.mp3",
+            "audio/meow-3.mp3"
+        ],
+        score: 0,
+        spawnTime: 800,
+        spawnType: SpawnType.SLIDE,
+        size: ELEMENT_SIZE + 15,
+
+        slideTime: "RANDOM",
+        slideTimeRandomLower: 500,
+        slideTimeRandomUpper: 1000,
+        slideSteps: 8,
+        slideEasing: "swing",
+
+        doDecay: true,
+        decayTime: 1000,
+
+        getAnimatePoints: function () {
+            return "RANDOM";
+        },
+
+        onEntityClick: function (manager) {
+            manager.gameScore += 1;
+            this.score++;
+        },
+
+        onEntitySpawn: function(manager) {
+            return !manager.anyInstancesOf(this.cssClass);
+        },
+
+        removeOverride: function (img, manager) {
+            let imagePosition = img.getBoundingClientRect();
+            let explosion = $("<img alt=\"explosion\" src='../img/heart.gif' class='heart_explosion'>");
+
+            explosion.css({
+                position: "absolute",
+                top: imagePosition.top,
+                left: imagePosition.left,
+                width: `${ELEMENT_SIZE + 20}px`
+            });
+
+            manager.gameSpace.append(explosion);
+            explosion.fadeOut(900);
+            img.remove();
+        }
+    });
+
     startButton.click(() => {
         if (entityManager.isLocked()) return;
         entityManager.loadGame();
         entityManager.setupGame();
-        entityManager.addEntities(slideTest);
+        entityManager.addEntities(slideTest, moverFish);
 
         entityManager.lock();
         $("body").css("background", "url('img/matrixrain.gif') no-repeat center center fixed").css("background-size", "cover");
