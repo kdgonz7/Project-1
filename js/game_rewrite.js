@@ -228,6 +228,8 @@ class Entity {
     }
 }
 
+let shilly = null;
+
 class EntityManager {
     constructor() {
         this.entQueue = [];
@@ -812,6 +814,46 @@ const playAnimations = (playerName, startButton) => {
     }, 10000);
 }
 
+const start = (entityManager, slideTest, testFish) => {
+    if (entityManager.isLocked()) return;
+    entityManager.loadGame();
+    entityManager.setupGame();
+    entityManager.addEntities(slideTest, testFish);
+
+    entityManager.lock();
+    $("body").css("background", "url('img/matrixrain.gif') no-repeat center center fixed").css("background-size", "cover");
+    $("#mainGameInstructionsPage").fadeOut(1000);
+    $("#gamespaceTotality").fadeIn(1000, () => {
+        entityManager.startGame();
+        entityManager.onEndGame = function (entReport) {
+            $("#gamespaceTotality").fadeOut(1000, () => {
+                $("#leaderstats").fadeIn(1000);
+
+                console.log("Showing leaderboard statistics. Current entities in manager:", entReport);
+                // populate leaderstats with score for each entity in entity manager
+
+                if (!loadedLeaderboard) {
+                    let tableLeaderboard = $("#leaderboardt");
+
+                    for (const ent of entReport) {
+                        console.log(ent);
+
+                        if (ent.disableFromStats) {
+                            continue;
+                        }
+
+                        let row = `<tr><td>${toTitleCase(ent.cssClass)}</td><td>${ent.score}</td></tr>`;
+                        tableLeaderboard.append(row);
+                    }
+
+                    loadedLeaderboard = true;
+                }
+
+                entityManager.unlock();
+            });
+        }
+    });
+}
 $(document).ready(() => {
     // ——— DOM Elements ———
     const entityManager = new EntityManager();
@@ -867,7 +909,7 @@ $(document).ready(() => {
 
         removeOverride: function (img, manager) {
             let imagePosition = img.getBoundingClientRect();
-            let explosion = $("<img alt=\"explosion\" src='../img/heart.gif' class='heart_explosion'>");
+            let explosion = $("<img alt=\"explosion\" src='../img/explosing.gif' class='heart_explosion'>");
 
             explosion.css({
                 position: "absolute",
@@ -981,44 +1023,7 @@ $(document).ready(() => {
     );
 
     startButton.click(() => {
-        if (entityManager.isLocked()) return;
-        entityManager.loadGame();
-        entityManager.setupGame();
-        entityManager.addEntities(slideTest, testFish);
-
-        entityManager.lock();
-        $("body").css("background", "url('img/matrixrain.gif') no-repeat center center fixed").css("background-size", "cover");
-        $("#mainGameInstructionsPage").fadeOut(1000);
-        $("#gamespaceTotality").fadeIn(1000, () => {
-            entityManager.startGame();
-            entityManager.onEndGame = function (entReport) {
-                $("#gamespaceTotality").fadeOut(1000, () => {
-                    $("#leaderstats").fadeIn(1000);
-
-                    console.log("Showing leaderboard statistics. Current entities in manager:", entReport);
-                    // populate leaderstats with score for each entity in entity manager
-
-                    if (!loadedLeaderboard) {
-                        let tableLeaderboard = $("#leaderboardt");
-
-                        for (const ent of entReport) {
-                            console.log(ent);
-
-                            if (ent.disableFromStats) {
-                                continue;
-                            }
-
-                            let row = `<tr><td>${toTitleCase(ent.cssClass)}</td><td>${ent.score}</td></tr>`;
-                            tableLeaderboard.append(row);
-                        }
-
-                        loadedLeaderboard = true;
-                    }
-
-                    entityManager.unlock();
-                });
-            }
-        });
+        start(entityManager, slideTest, testFish);
     });
 
     $("#back_to_menu").click(() => {
