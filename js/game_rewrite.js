@@ -350,7 +350,7 @@ class EntityManager {
         this.gameIntervals.push(timerIntervalId);
 
         for (const entity of this.entQueue) {
-            // I asked it to simplify the thread process through creating a new function createThread
+            // simplify the thread process through creating a new function createThread
             // to add new threads and automatically store their IDs in the gameIntervals array for easy cleanup later.
             // This way, we avoid code repetition and make it easier to manage intervals for different spawn types.
             const createThread = (fn, id, type) => {
