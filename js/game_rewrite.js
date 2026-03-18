@@ -1018,7 +1018,25 @@ $(document).ready(() => {
                 this.score++;
             },
 
-            onEntitySpawn: function(manager) {},
+            onEntitySpawn: function(manager) {
+                return !manager.anyInstancesOf(this.cssClass);
+            },
+
+            removeOverride: function (img, manager) {
+                let imagePosition = img.getBoundingClientRect();
+                let explosion = $("<img alt=\"explosion\" src='../img/heart.gif' class='heart_explosion'>");
+
+                explosion.css({
+                    position: "absolute",
+                    top: imagePosition.top,
+                    left: imagePosition.left,
+                    width: `${ELEMENT_SIZE + 20}px`
+                });
+
+                manager.gameSpace.append(explosion);
+                explosion.fadeOut(900);
+                img.remove();
+            }
         })
     );
 
