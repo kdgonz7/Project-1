@@ -484,6 +484,10 @@ class EntityManager {
         }
     }
 
+    getTimeLeft() {
+        return this.time;
+    }
+
     updateTimeText() {
         $("#time").text(`Time: ${this.time}s`);
     }
@@ -535,7 +539,6 @@ class EntityManager {
             ent.slideTime = Math.random() * ent.slideTimeRandomUpper + ent.slideTimeRandomLower; // Random slide time between 2 and 5 seconds
         }
 
-
         let animateElement = $(cbi);
 
         for (let i = 0; i < ent.slideSteps; i++) {
@@ -553,23 +556,6 @@ class EntityManager {
                 animateElement.remove();
             });
         }
-        // $(cbi).animate({
-        //     top: `${bounds[0][1]}px`,
-        //     left: `${bounds[0][0]}px`,
-        // }, ent.slideTime, ent.slideEasing, function () {
-        //     console.log("First animation complete for SLIDE entity. Starting second animation. Entity:", ent);
-        //     $(cbi).animate({
-        //         top: `${bounds[1][1]}px`,
-        //         left: `${bounds[1][0]}px`,
-        //     }, ent.slideTime, ent.slideEasing, function () {
-        //         if (ent.doDecay) {
-        //             console.log("Ent Fade Out");
-        //             $(cbi).fadeOut(ent.decayTime, function () {
-        //                 $(cbi).remove();
-        //             });
-        //         }
-        //     });
-        // });
     }
 
     getAllInstancesOf(cssClass) {
@@ -769,7 +755,7 @@ const playAnimations = (playerName, startButton) => {
     new Typed('#splash h1', {
         strings: ["GAME LOADING...", "LOADING ASSETS...", "playerInformation.retrieve({})", `HELLO, ${playerName}`, "DO YOU HAVE WHAT IT TAKES?"],
         typeSpeed: 30,
-        showCursor: false,
+        showCursor: true,
     });
     let instructionString = "> Your job is simple. Infiltrate the mainframe by clicking the cute server cat before time runs out. Each successful hack earns you points. If you're skilled enough, you might encounter the <b>rare</b> firewall that grants 5 bonus points!\n" +
         "                    <br><br>\n>" +
@@ -987,6 +973,7 @@ $(document).ready(() => {
             0,
             ELEMENT_SIZE,
         ),
+
         new SpawnInformation(
             800,
             SpawnType.SLIDE,
@@ -1011,7 +998,7 @@ $(document).ready(() => {
 
         new EntityImplementation({
             onEntityClick: function(manager) {
-                manager.gameScore += 1;
+                manager.gameScore += 7;
                 this.score++;
             },
 
@@ -1037,8 +1024,51 @@ $(document).ready(() => {
         })
     );
 
+    let thirtyPointPerson = new Entity();
+    thirtyPointPerson.setupEntityWithData({
+        image: "img/firewall.png",
+        cssClass: "thirtypointperson",
+        sound: "audio/bonus.mp3",
+        score: 0,
+        health: 100,
+        spawnTime: 1000,
+        spawnType: SpawnType.SLIDE,
+        slideTime: "RANDOM",
+        slideTimeRandomLower: 1000,
+        slideTimeRandomUpper: 2000,
+        slideSteps: 2,
+        slideEasing: "swing",
+        size: ELEMENT_SIZE + 30,
+        onEntitySpawn: function(manager) {
+            return manager.gameScore >= 10 && manager.time <= 25 && !manager.anyInstancesOf(this.cssClass);
+        },
+        onEntityClick: function(manager) {
+            manager.gameScore += 1;
+            this.score++;
+        },
+        removeOverride: function (img, manager) {
+            if (this.health > 0) {
+                this.health -= 1;
+            } else {
+                let imagePosition = img.getBoundingClientRect();
+                let explosion = $("<img alt=\"explosion\" src='../img/explosing.gif' class='heart_explosion'>");
+
+                explosion.css({
+                    position: "absolute",
+                    top: imagePosition.top,
+                    left: imagePosition.left,
+                    width: `${ELEMENT_SIZE + 30}px`
+                });
+
+                manager.gameSpace.append(explosion);
+                explosion.fadeOut(900);
+                img.remove();
+            }
+        }
+    });
+
     startButton.click(() => {
-        start(entityManager, slideTest, testFish);
+        start(entityManager, slideTest, testFish, thirtyPointPerson);
     });
 
     $("#back_to_menu").click(() => {

@@ -184,6 +184,28 @@ table th, table td {
     height: 100%;
 }
 
+.slider {
+    animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+    0% {
+        transform: rotateZ(0deg);
+    }
+    25% {
+        transform: rotateZ(-35deg);
+    }
+    50% {
+        transform: rotateZ(35deg);
+    }
+    75% {
+        transform: rotateZ(-35deg);
+    }
+    100% {
+        transform: translate(0, 0);
+    }
+}
+
 @media only screen and (max-width: 900px) {
     #content {
         display: inline-block;
@@ -217,23 +239,6 @@ table th, table td {
     animation: shake 0.5s infinite;
 }
 
-@keyframes shake {
-    0% {
-        transform: translate(0, 0);
-    }
-    25% {
-        transform: translate(-5px, 0);
-    }
-    50% {
-        transform: translate(5px, 0);
-    }
-    75% {
-        transform: translate(-5px, 0);
-    }
-    100% {
-        transform: translate(0, 0);
-    }
-}
 
 @keyframes pulse {
     0% {
@@ -249,3 +254,4 @@ table th, table td {
         opacity: 1;
     }
 }
+
