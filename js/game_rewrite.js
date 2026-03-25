@@ -9,6 +9,10 @@ const PLAY_ANIMATIONS = true;
 
 let loadedLeaderboard = false;
 
+let skills = [
+    "Grouped", /* Kills entities in a 500px distance. */
+]
+
 // ——— Utility Functions ———
 const playSound = (src) => {
     try {
@@ -530,10 +534,10 @@ class EntityManager {
 
         let cbi = this.spawnEntity(ent);
 
-        console.log(`Exposing manager interface: ${this}`);
-        console.log("Animation Running.")
-        console.log("Bounds: " + JSON.stringify(bounds));
-        console.log("Len(Bounds)" + bounds.length);
+        // console.log(`Exposing manager interface: ${this}`);
+        // console.log("Animation Running.")
+        // console.log("Bounds: " + JSON.stringify(bounds));
+        // console.log("Len(Bounds)" + bounds.length);
 
         if (ent.slideTime === "RANDOM") {
             ent.slideTime = Math.random() * ent.slideTimeRandomUpper + ent.slideTimeRandomLower; // Random slide time between 2 and 5 seconds
@@ -624,7 +628,7 @@ class EntityManager {
 
         // BUG: for some reason "{}" was used instead of "[]" for destructuring the random position, which caused an error and prevented entities from spawning. This has been fixed to use "[]" for array destructuring.
         const [x, y] = this.getRandomPosition();
-        console.log("Spawning mole at position:", {x, y});
+        // console.log("Spawning mole at position:", {x, y});
 
         $img.css({
             position: "absolute",
@@ -797,11 +801,11 @@ const playAnimations = (playerName, startButton) => {
     }, 10000);
 }
 
-const start = (entityManager, slideTest, testFish) => {
+const start = (entityManager, ...other) => {
     if (entityManager.isLocked()) return;
     entityManager.loadGame();
     entityManager.setupGame();
-    entityManager.addEntities(slideTest, testFish);
+    entityManager.addEntities(...other);
 
     entityManager.lock();
     $("body").css("background", "url('img/matrixrain.gif') no-repeat center center fixed").css("background-size", "cover");
@@ -819,8 +823,6 @@ const start = (entityManager, slideTest, testFish) => {
                     let tableLeaderboard = $("#leaderboardt");
 
                     for (const ent of entReport) {
-                        console.log(ent);
-
                         if (ent.disableFromStats) {
                             continue;
                         }
@@ -903,172 +905,45 @@ $(document).ready(() => {
 
             manager.gameSpace.append(explosion);
             explosion.fadeOut(900);
-            img.remove();
-        }
-    });
 
-    let moverFish = new Entity();
-    moverFish.setupEntityWithData({
-        image: "img/matrix_cat.png",
-        cssClass: "fish",
-        sound: [
-            "audio/meow-1.mp3",
-            "audio/meow-2.mp3",
-            "audio/meow-3.mp3"
-        ],
-        score: 0,
-        spawnTime: 800,
-        spawnType: SpawnType.SLIDE,
-        size: ELEMENT_SIZE + 15,
+            for (const image of manager.gameSpace.children()) {
+                if (!$(image).hasClass("slider")) {
+                    continue;
+                }
+                let imp = image.getBoundingClientRect();
+                let imc = img.getBoundingClientRect();
 
-        slideTime: "RANDOM",
-        slideTimeRandomLower: 500,
-        slideTimeRandomUpper: 1000,
-        slideSteps: 8,
-        slideEasing: "swing",
+                let dx = imp.left - imc.left;
+                let dy = imp.top - imc.top;
+                let distance = Math.hypot(dx, dy); /* the distance */
 
-        doDecay: true,
-        decayTime: 1000,
+                if (distance < 700) {
+                    console.log("Close enough");
+                    let newP = $("<p class='damage_text'>-0.5 pts</p>");
+                    newP.css({
+                        position: "absolute",
+                        top: imp.top,
+                        left: imp.left,
+                    });
 
-        getAnimatePoints: function () {
-            return "RANDOM";
-        },
+                    manager.gameSpace.append(newP);
+                    newP.animate({top: imp.top - 50, opacity: 0}, 1000, function () {
+                        newP.remove();
+                    });
 
-        onEntityClick: function (manager) {
-            manager.gameScore += 1;
-            this.score++;
-        },
+                    $(image).remove();
 
-        onEntitySpawn: function(manager) {
-            return !manager.anyInstancesOf(this.cssClass);
-        },
-
-        removeOverride: function (img, manager) {
-            let imagePosition = img.getBoundingClientRect();
-            let explosion = $("<img alt=\"explosion\" src='../img/heart.gif' class='heart_explosion'>");
-
-            explosion.css({
-                position: "absolute",
-                top: imagePosition.top,
-                left: imagePosition.left,
-                width: `${ELEMENT_SIZE + 20}px`
-            });
-
-            manager.gameSpace.append(explosion);
-            explosion.fadeOut(900);
-            img.remove();
-        }
-    });
-
-    let testFish = new Entity();
-    testFish.setupEntityWithClasses(
-        new GeneralEntityInformation(
-            "img/matrix_cat.png",
-            "testfish",
-            [
-                "audio/meow-1.mp3",
-                "audio/meow-2.mp3",
-                "audio/meow-3.mp3"
-            ],
-            0,
-            ELEMENT_SIZE,
-        ),
-
-        new SpawnInformation(
-            800,
-            SpawnType.SLIDE,
-            null
-        ),
-
-        new DecayInformation(
-            true,
-            1000
-        ),
-
-        new SlideInformation(
-            "RANDOM",
-            function () {
-                return "RANDOM";
-            },
-            8,
-            "swing",
-            1000,
-            500
-        ),
-
-        new EntityImplementation({
-            onEntityClick: function(manager) {
-                manager.gameScore += 7;
-                this.score++;
-            },
-
-            onEntitySpawn: function(manager) {
-                return !manager.anyInstancesOf(this.cssClass);
-            },
-
-            removeOverride: function (img, manager) {
-                let imagePosition = img.getBoundingClientRect();
-                let explosion = $("<img alt=\"explosion\" src='../img/heart.gif' class='heart_explosion'>");
-
-                explosion.css({
-                    position: "absolute",
-                    top: imagePosition.top,
-                    left: imagePosition.left,
-                    width: `${ELEMENT_SIZE + 20}px`
-                });
-
-                manager.gameSpace.append(explosion);
-                explosion.fadeOut(900);
-                img.remove();
+                    this.gameScore += 1;
+                }
             }
-        })
-    );
 
-    let thirtyPointPerson = new Entity();
-    thirtyPointPerson.setupEntityWithData({
-        image: "img/firewall.png",
-        cssClass: "thirtypointperson",
-        sound: "audio/bonus.mp3",
-        score: 0,
-        health: 100,
-        spawnTime: 1000,
-        spawnType: SpawnType.SLIDE,
-        slideTime: "RANDOM",
-        slideTimeRandomLower: 1000,
-        slideTimeRandomUpper: 2000,
-        slideSteps: 2,
-        slideEasing: "swing",
-        size: ELEMENT_SIZE + 30,
-        onEntitySpawn: function(manager) {
-            return manager.gameScore >= 10 && manager.time <= 25 && !manager.anyInstancesOf(this.cssClass);
-        },
-        onEntityClick: function(manager) {
-            manager.gameScore += 1;
-            this.score++;
-        },
-        removeOverride: function (img, manager) {
-            if (this.health > 0) {
-                this.health -= 1;
-            } else {
-                let imagePosition = img.getBoundingClientRect();
-                let explosion = $("<img alt=\"explosion\" src='../img/explosing.gif' class='heart_explosion'>");
+            img.remove();
 
-                explosion.css({
-                    position: "absolute",
-                    top: imagePosition.top,
-                    left: imagePosition.left,
-                    width: `${ELEMENT_SIZE + 30}px`
-                });
-
-                manager.gameSpace.append(explosion);
-                explosion.fadeOut(900);
-                img.remove();
-            }
         }
     });
 
     startButton.click(() => {
-        start(entityManager, slideTest, testFish, thirtyPointPerson);
+        start(entityManager, slideTest);
     });
 
     $("#back_to_menu").click(() => {
