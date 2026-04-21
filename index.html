@@ -7,15 +7,16 @@
 
 <!DOCTYPE html>
 <html lang="en-US">
+
 <head>
     <title>HACK THE MAINFRAME</title>
-    <link href="css/game.css" rel="stylesheet"/>
+    <link href="css/game.css" rel="stylesheet" />
     <meta charset="utf-8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=Playwrite+NZ+Basic:wght@100..400&display=swap"
-          rel="stylesheet">
+        rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://code.jquery.com/ui/1.14.2/jquery-ui.js"></script>
     <script src="https://unpkg.com/typed.js@3.0.0/dist/typed.umd.js"></script>
@@ -23,62 +24,65 @@
     <link rel="icon" href="favicon.png" type="image/png">
     <link rel='stylesheet' href='//cdn.jsdelivr.net/npm/hack-font@3.3.0/build/web/hack.css'>
 </head>
+
 <body>
 
-<div id="wrapper">
-    <div id="splash" style="display: none">
-        <h1>Loading...</h1>
-        <button id="skip_intro">Skip Intro</button>
-        <button id="toggle_cursor">Toggle Crossbow Cursor (For Fun)</button>
-    </div>
-
-    <div id="custom_cursor" style="position: absolute">
-        <img src="img/torch%20curs.gif" alt="Torch">
-    </div>
-
-    <div id="content">
-        <h1>&gt; Hack the MainFrame...</h1>
-        <hr>
-
-        <div id="mainGameInstructionsPage" class="col1">
-            <h3 id="title">Welcome...</h3>
-            <p id="directions">
-            </p>
-
-            <button type="button" id="start_button">Start!</button>
-
-            <svg id="graph"></svg>
-        </div>
-
-        <div id="gamespaceTotality" style="display: none">
-            <div id="info">
-                <p><span id="score">0 pts</span></p>
-                <p><span id="credits">Credits: 0cc</span></p>
-                <p><span id="highscore">0 pts</span></p>
-                <p><span id="time">...</span></p>
+    <div id="wrapper">
+        <div id="splash" style="display: none">
+            <h1>Loading...</h1>
+            <div id="buttons">
+                <button id="skip_intro">Skip Intro</button>
+                <button id="toggle_cursor">Toggle Crossbow Cursor (For Fun)</button>
             </div>
-            <div id="gamespace"></div>
-            <div id="progbar"></div>
         </div>
 
-        <div id="leaderstats" style="display: none">
-            <table id="leaderboardt">
-                <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Score</th>
-                </tr>
-                </thead>
-            </table>
-            <button type="button" id="back_to_menu">Play Again</button>
+        <div id="custom_cursor" style="position: absolute">
+            <img src="img/torch%20curs.gif" alt="Torch">
         </div>
-    </div><!--ends content div -->
-</div>
-<div id="blindness" style="display: none"></div>
+
+        <div id="content">
+            <h1>&gt; Hack the MainFrame...</h1>
+            <hr>
+
+            <div id="mainGameInstructionsPage" class="col1">
+                <h3 id="title">Welcome...</h3>
+                <p id="directions">
+                </p>
+
+                <button type="button" id="start_button">Start!</button>
+
+                <svg id="graph"></svg>
+            </div>
+
+            <div id="gamespaceTotality" style="display: none">
+                <div id="info">
+                    <p><span id="score">0 pts</span></p>
+                    <p><span id="credits">Credits: 0cc</span></p>
+                    <p><span id="highscore">0 pts</span></p>
+                    <p><span id="time">...</span></p>
+                </div>
+                <div id="gamespace"></div>
+                <div id="progbar"></div>
+            </div>
+
+            <div id="leaderstats" style="display: none">
+                <table id="leaderboardt">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                </table>
+                <button type="button" id="back_to_menu">Play Again</button>
+            </div>
+        </div><!--ends content div -->
+    </div>
+    <div id="blindness" style="display: none"></div>
 
 </body>
-<script src="js/game_rewrite.js"></script>
-<script src="js/graph.js"></script>
+<script type="module" src="js/game_rewrite.js"></script>
+<script type="module" src="js/graph.js"></script>
 <script src="js/cursor.js"></script>
 
 </html>

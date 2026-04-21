@@ -2,7 +2,8 @@
     cursor: none;
 }
 
-html, body {
+html,
+body {
     font-family: 'Hack', sans-serif;
     font-size: 14px;
     margin: 0;
@@ -25,9 +26,12 @@ html, body {
     margin: auto auto auto auto;
     text-align: center;
     display: flex;
-    justify-content: center; /* Horizontal */
-    align-items: center; /* Vertical */
-    height: 100vh; /* Full viewport height */
+    justify-content: center;
+    /* Horizontal */
+    align-items: center;
+    /* Vertical */
+    height: 100vh;
+    /* Full viewport height */
     color: #55ff00;
 }
 
@@ -48,18 +52,21 @@ button {
     padding: 8px;
 }
 
+#buttons {
+    position: absolute;
+    bottom: 10%;
+    left: 10%;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
 /* bottom left */
 #skip_intro {
-    position: absolute;
-    bottom: 10%; /* Aligns to the bottom edge */
-    left: 10%; /* Aligns to the left edge */
     background-color: #000000;
 }
 
 #toggle_cursor {
-    position: absolute;
-    bottom: 10%; /* Aligns to the bottom edge */
-    left: 15%; /* Aligns to the left edge */
     background-color: #000000;
 }
 
@@ -72,7 +79,8 @@ button {
     border-radius: 1px;
 }
 
-#custom_cursor, #custom_cursor img {
+#custom_cursor,
+#custom_cursor img {
     width: 50px;
     height: 50px;
     position: absolute;
@@ -162,7 +170,8 @@ table {
     background-color: #000000;
 }
 
-table th, table td {
+table th,
+table td {
     border: 1px solid gray;
     padding: 8px;
     text-align: left;
@@ -192,15 +201,19 @@ table th, table td {
     0% {
         transform: rotateZ(0deg);
     }
+
     25% {
         transform: rotateZ(-35deg);
     }
+
     50% {
         transform: rotateZ(35deg);
     }
+
     75% {
         transform: rotateZ(-35deg);
     }
+
     100% {
         transform: translate(0, 0);
     }
@@ -216,7 +229,9 @@ table th, table td {
     }
 }
 
-.matrix_cat, .blindness, .firewall {
+.matrix_cat,
+.blindness,
+.firewall {
     animation: popIn 1s ease-out;
 }
 
@@ -225,10 +240,12 @@ table th, table td {
         transform: scale(0);
         opacity: 0;
     }
+
     50% {
         transform: scale(1.2);
         opacity: 1;
     }
+
     100% {
         transform: scale(1);
         opacity: 1;
@@ -245,13 +262,14 @@ table th, table td {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.2);
         opacity: 0.7;
     }
+
     100% {
         transform: scale(1);
         opacity: 1;
     }
 }
-

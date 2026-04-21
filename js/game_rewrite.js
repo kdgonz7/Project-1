@@ -1,6 +1,8 @@
 // ——— Constants ———
 // noinspection JSUnresolvedReference
 
+// import { cursorEnabled } from "./cursor";
+
 const DEFAULT_GAME_TIME = 25; // seconds
 const TIME_DECREMENT_MS = 1000;
 const ELEMENT_SIZE = 45;
@@ -522,7 +524,7 @@ class EntityManager {
         if (typeof bounds === "string" && bounds.toUpperCase() === "RANDOM") {
             bounds = [];
 
-            for (let i = 0 ; i < ent.slideSteps ; i++) {
+            for (let i = 0; i < ent.slideSteps; i++) {
                 bounds.push(this.getRandomPosition());
             }
         }
@@ -634,8 +636,12 @@ class EntityManager {
             position: "absolute",
             width: `${ent.size}px`,
             top: `${y}px`,
-            left: `${x}px`
+            left: `${x}px`,
         });
+
+        // if (!cursorEnabled) $img.css({
+        //     cursor: "pointer",
+        // });
 
         $img.attr('src', ent.image);
         $img.addClass(ent.cssClass);
@@ -808,9 +814,9 @@ const start = (entityManager, ...other) => {
     entityManager.addEntities(...other);
 
     entityManager.lock();
-    $("body").css("background", "url('img/matrixrain.gif') no-repeat center center fixed").css("background-size", "cover");
-    $("#mainGameInstructionsPage").fadeOut(1000);
-    $("#gamespaceTotality").fadeIn(1000, () => {
+    // $("body").css("background", "url('img/matrixrain.gif') no-repeat center center fixed").css("background-size", "cover");
+    $("#mainGameInstructionsPage").fadeOut(200);
+    $("#gamespaceTotality").delay(200).fadeIn(1000, () => {
         entityManager.startGame();
         entityManager.onEndGame = function (entReport) {
             $("#gamespaceTotality").fadeOut(1000, () => {
@@ -905,41 +911,40 @@ $(document).ready(() => {
 
             manager.gameSpace.append(explosion);
             explosion.fadeOut(900);
-
-            for (const image of manager.gameSpace.children()) {
-                if (!$(image).hasClass("slider")) {
-                    continue;
-                }
-                let imp = image.getBoundingClientRect();
-                let imc = img.getBoundingClientRect();
-
-                let dx = imp.left - imc.left;
-                let dy = imp.top - imc.top;
-                let distance = Math.hypot(dx, dy); /* the distance */
-
-                if (distance < 700) {
-                    console.log("Close enough");
-                    let newP = $("<p class='damage_text'>-0.5 pts</p>");
-                    newP.css({
-                        position: "absolute",
-                        top: imp.top,
-                        left: imp.left,
-                    });
-
-                    manager.gameSpace.append(newP);
-                    newP.animate({top: imp.top - 50, opacity: 0}, 1000, function () {
-                        newP.remove();
-                    });
-
-                    $(image).remove();
-
-                    this.gameScore += 1;
-                }
-            }
-
             img.remove();
-
         }
+    });
+
+    let slideTest2 = new Entity();
+    slideTest2.setupEntityWithData({
+        image: "img/firewall.png",
+        cssClass: "slider",
+        sound: [
+            "audio/meow-1.mp3",
+            "audio/meow-2.mp3",
+            "audio/meow-3.mp3"
+        ],
+        score: 0,
+        spawnTime: 300,
+        spawnType: SpawnType.SLIDE,
+
+        slideTime: "RANDOM",
+        slideTimeRandomLower: 1000,
+        slideTimeRandomUpper: 2000,
+        slideSteps: 2,
+        slideEasing: "swing",
+
+        doDecay: true,
+        decayTime: 500,
+        getAnimatePoints: function () {
+            return "RANDOM";
+        },
+
+        size: ELEMENT_SIZE + 15,
+        onEntityClick: function (manager) {
+            manager.gameScore += 1;
+            this.score++;
+        },
     });
 
     startButton.click(() => {

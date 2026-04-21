@@ -1,7 +1,7 @@
 let customCursor = document.getElementById("custom_cursor");
 let cursorEnabled = true;
 
-$(document).mousemove(function(e) {
+$(document).mousemove(function (e) {
     // Get the current mouse coordinates
     const x = e.clientX;
     const y = e.clientY;
@@ -11,7 +11,7 @@ $(document).mousemove(function(e) {
     customCursor.style.top = y + 'px';
 });
 
-$("#toggle_cursor").click(function() {
+$("#toggle_cursor").click(function () {
     cursorEnabled = !cursorEnabled;
 
     if (cursorEnabled) {
